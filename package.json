@@ -1,20 +1,64 @@
 {
   "name": "yeelight-desktop",
   "version": "0.1.0",
+  "description":"yeelight desktop version",
+  "author":"hubert <yi.xiang@live.cn>",
   "private": true,
-  "main": "main.js",
-  "homepage":".",
-  "dependencies": {
-    "electron": "^1.8.3",
-    "react": "^16.2.0",
-    "react-dom": "^16.2.0",
-    "react-scripts": "1.1.1"
+  "main": "public/electron.js",
+  "homepage": "./",
+  "build": {
+    "appId": "com.example.yeelight.desktop",
+    "productName":"Yeelight-Desktop",
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories":{
+      "output": "dist"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "mac": {
+      "icon": "build/icons/icon.icns"
+    },
+    "win": {
+      "icon": "build/icons/icon.ico"
+    },
+    "linux": {
+      "icon": "build/icons"
+    }
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
-    "electron-start":"electron ."
+    "electron-dev": "concurrently \"yarn start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "concurrently \"yarn build\" \"build\" "
+  },
+  "dependencies": {
+    "electron-is-dev": "^0.3.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-scripts": "1.1.1"
+  },
+  "devDependencies": {
+    "concurrently": "^3.5.1",
+    "electron": "^1.8.3",
+    "electron-builder": "^20.4.1",
+    "wait-on": "^2.1.0"
   }
 }
