@@ -1,0 +1,64 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+
+.app-header{
+  padding: 50px;
+  width: 100%;
+  background-color:#363636;
+  color:#fff;
+  position: fixed;  
+  top: 0;
+}
+.app-header__logo{
+  height: 50px;
+ display: inline-block;
+  
+}
+
+.app-header__title{
+  margin:0;
+  margin-left: 15px;
+  line-height: 50px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.app-container{
+  margin-top:180px;
+}
+
+.app-drives{
+  margin: 30px auto;
+  padding: 0;
+  width: 680px;
+}
+
+.app-drive{
+  margin: 10px;
+  padding: 15px;
+  width:150px;
+  height: 150px;
+  border: 1px dotted #ccc;
+  border-radius: 4px;
+  list-style-type: none;
+  display: inline-block;
+  text-align: center;
+  box-sizing: border-box;
+  vertical-align: top;
+}
+
+.app-drive__icon{
+  width: 80px;
+  height: 80px;
+}
+
+.app-drive__name{
+  max-width: 140px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
