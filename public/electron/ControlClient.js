@@ -1,144 +1,142 @@
+const net = require('net');
+
+
 const MulticastSocket = require('./MulticastSocket');
 
 function ControlClient(config) {
-    this.leds = {};
-    this.nr_leds = 0;
-    this.act_dev = {};
-    MulticastSocket.call(this, config);
+  this.leds = {};
+  MulticastSocket.call(this, config);
 }
 
 
 let proto = ControlClient.prototype =
-    Object.create(MulticastSocket.prototype);
+  Object.create(MulticastSocket.prototype);
 
 proto.connected = false;
 
+// 打印消息
 proto.onInfo = function (msg) {
-    console.log(msg);
+  console.log(msg);
 }
 
+// 设备搜索网络连接成功
 proto.onConnected = function (remote) {
-    var me = this;
-    this.onInfo(`Server listen on: ${remote.address}:${remote.port}`);
-    this.connected = true;
+  var me = this;
+  this.onInfo(`Server listen on: ${remote.address}:${remote.port}`);
+  this.connected = true;
 };
 
+// 设备搜索网络断开
 proto.onDisconnected = function () {
-    this.onInfo("Disconnected");
-    this.connected = false;
+  this.onInfo("Disconnected");
+  this.connected = false;
 };
 
+// 错误消息
 proto.onError = function (error) {
-    this.onInfo('Error:\r\n ' + error);
+  this.onInfo('Error:\r\n ' + error);
 };
 
+// 搜索设备回调
 proto.onDiagram = function (message) {
-    this.addDevice(message);
-};
+  const headers = message.split("\r\n");
+  let did = "";
+  let loc = "";
+  for (i = 0; i < headers.length; i++) {
+    if (headers[i].indexOf("id:") >= 0)
+      did = headers[i].slice(4);
+    if (headers[i].indexOf("Location:") >= 0)
+      loc = headers[i].slice(10);
+  }
+  if (did == "" || loc == "")
+    return;
 
-proto.addDevice = function (message) {
-    did = "";
-    loc = "";
-
-    headers = message.split("\r\n");
-    for (i = 0; i < headers.length; i++) {
-        if (headers[i].indexOf("id:") >= 0)
-            did = headers[i].slice(4);
-        if (headers[i].indexOf("Location:") >= 0)
-            loc = headers[i].slice(10);
-    }
-    if (did == "" || loc == "")
-        return;
-
-    if (did in this.leds) {
-        return;
-    } else {
-        loc = loc.split("//")[1];
-        this.leds[did] = { did: did, location: loc, connected: false, socket: -1 };
-        this.nr_leds++;
-    }
-    let props = {};
+  if (did in this.leds) {
+    return;
+  } else {
+    let data = {};
     headers.forEach(header => {
-        let keyVal = header.split(':');
-        if (keyVal.length == 2)
-            props[keyVal[0]] = keyVal[1].trim()
+      let keyVal = header.split(':');
+      if (keyVal.length == 2)
+        data[keyVal[0]] = keyVal[1].trim()
     });
-    this.onAddDevice(did, loc, props);
+   
+    loc = loc.split("//")[1];
+    this.leds[did] = { 
+        did: did, 
+        location: loc, 
+        data,
+        connected: false, 
+        client: null 
+    };
+    this.onAddDevice(did, loc, data);
+  }
+  
 };
 
-proto.onAddDevice = function (did, loc, props) {
+// 添加设备
+proto.onAddDevice = function (did, location, data) {};
+
+// 设备消息回调
+proto.onDeviceDiagram = function (message) {
+    const headers = message.split("\r\n");
+    let data = {};
+    headers.forEach(header => {
+      let keyVal = header.split(':');
+      if (keyVal.length == 2)
+        data[keyVal[0]] = keyVal[1].trim()
+    });
+    this.onNotify(did, data);
 };
 
-proto.onResult = function (result) {
-};
+// 设备消息
+proto.onNotify = (did,data){};
 
-proto.onDevResponse = function (data) {
-};
-
+// 搜索设备
 proto.scan = function () {
-    this.sendDiagram('M-SEARCH * HTTP/1.1\r\n MAN:"ssdp:discover"\r\n wifi_bulb');
+  this.sendDiagram('M-SEARCH * HTTP/1.1\r\n MAN:"ssdp:discover"\r\n wifi_bulb');
 };
 
-proto.pollDev = function (dev) {
-    var me = this;
-    chrome.socket.read(dev.socket, 4096, function (info) {
-        if (info.resultCode >= 0) {
-            me.onDevResponse(me.arrayBufferToString(info.data).split("\r\n")[0]);
-            me.pollDev(dev);
-        } else {
-            me.handleError("read data failed", "error");
-        }
+// 连接设备
+proto.connectDevice = function (did, callback) {
+  var led = this.leds[did];
+  tmp = led.location.split(":");
+  address = tmp[0];
+  port = tmp[1];
+
+  if (!led.connected) {
+    this.onInfo("Connecting ...");
+
+    const client = net.connect(port, address, () => {
+      led.connected = true;
+       this.onNotify(did,'connected');
+    })
+    client.on('data', (message) => {
+        this.onDeviceDiagram(message.toString('utf-8'));
+    })
+    client.on('error', (error) => {
+        this.onError(error);
+    })
+    client.on('end', () => {
+      led.connected = false;
+      this.onNotify(did,'disconnected');
+    })
+    led.client = client;
+  } else {
+    this.onInfo("already connected");
+  }
+};
+
+// 发送命令
+proto.sendCommand = function (did, message) {
+  var led = this.leds[did];
+  if (led.connected && led.client)
+    client.write(Buffer.from(message), () => {
+      me.onInfo("REQ :" + message);
     });
-
-};
-
-proto.connectDev = function (message, target, callback) {
-    this.onInfo(message);
-    var led = this.leds[target];
-    var me = this;
-
-    tmp = led.location.split(":");
-    devAddr = tmp[0];
-    port = tmp[1];
-
-    this.act_dev = led;
-
-    if (!led.connected) {
-        this.onInfo("Connecting ...");
-
-        chrome.socket.create('tcp', function (socket) {
-            var socketId = socket.socketId;
-            chrome.socket.setKeepAlive(socketId, true, function (result) {
-                if (result != 0) {
-                    me.handleError("set keepalive failed", "error");
-                } else {
-                    chrome.socket.connect(socketId, devAddr, parseInt(port, 10), function (result) {
-                        if (result != 0) {
-                            me.handlerError("failed to connected", "error");
-                        } else {
-                            led.connected = true;
-                            me.onInfo("Connected successfully");
-                            led.socket = socketId;
-                            me.pollDev(led);
-                        }
-                    });
-                }
-            });
-        });
-    } else {
-        this.onInfo("already connected");
-    }
-};
-
-proto.sendRequest = function (message) {
-    var me = this;
-    if (this.act_dev && this.act_dev.connected == true) {
-        chrome.socket.write(this.act_dev.socket, this.stringToArrayBuffer(message + "\r\n"), function () {
-            me.onInfo("REQ :" + message);
-        });
-    } else {
-        this.onInfo("Device is not connected yet");
-    }
+} else {
+  this.onInfo("Device is not connected yet");
+}
 };
 
 

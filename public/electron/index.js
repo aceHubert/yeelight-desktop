@@ -1,6 +1,6 @@
 const path = require('path')
 const url = require('url')
-// 引入electron并创建一个Browserwindow
+  // 引入electron并创建一个Browserwindow
 const { app, BrowserWindow, ipcMain } = require('electron')
 const ControlClient = require('./ControlClient')
 
@@ -13,6 +13,7 @@ const kPort = 1982;
 let mainWindow
 let controlClient
 
+// 创建主窗体
 function createWindow() {
   //创建浏览器窗口,宽高自定义具体大小你开心就好
   mainWindow = new BrowserWindow({ width: 1120, height: 768 })
@@ -22,11 +23,9 @@ function createWindow() {
 
   // 打开开发者工具
   // isDev && mainWindow.webContents.openDevTools()
- 
-  mainWindow.webContents.on('dom-ready', function () {
-    controlClient.scan();
-  })
- 
+
+  controlClient.scan();
+
   // 关闭window时触发下列事件.
   mainWindow.on('closed', function () {
     mainWindow = null
@@ -40,14 +39,26 @@ function sendToRenderer(channel, msg) {
 }
 
 // 接收渲染客户端消息
-ipcMain.on('command', (event, arg) => {
+ipcMain.on('request', (event, arg) => {
   console.log(arg)
   switch (arg.type) {
-    case 'scan':
-      controlClient.scan();
-      break;
+  case 'scan':
+    controlClient.scan();
+    break;
+  case 'get-devices':
+    event.sender.send('report', {
+      type: 'get-devices',
+      devices: controlClient.leds.map(led => ({ led.did, address: led.location, led.data }))
+    });
+    break;
+  case 'connect':
+    controlClient.connectDevice(arg.did);
+    break;
+  case 'command':
+    controlClient.sendCommand(arg.did, arg.message);
+    break;
   }
-  // event.sender.send('asynchronous-reply', 'pong')
+
 })
 
 // 初始化客户端
@@ -57,26 +68,29 @@ function initClient() {
     port: kPort
   });
 
-  cc.onAddDevice = function (did, location, props) {
-    sendToRenderer('report', {
-      type: 'add-drive',
-      config: {
-        id: did,
-        address: location,
-        props
-      }
-    })
-  };
-  cc.onResult = function (result) {
-  };
   cc.onInfo = function (message) {
     console.log(message);
   };
-  cc.onDevResponse = function (data) {
-    console.log(data);
+
+  cc.onAddDevice = function (did, location, data) {
+    sendToRenderer('report', {
+      type: 'add-device',
+      config: {
+        did: did,
+        address: location,
+        data
+      }
+    })
   };
-  cc.onDevResponse = function (error) {
-    console.log(error);
+
+  cc.onNotify = function (did, data) {
+    sendToRenderer('report', {
+      type: 'notify',
+      config: {
+        id: did,
+        data
+      }
+    })
   };
   controlClient = cc;
 }
@@ -95,6 +109,7 @@ app.on('window-all-closed', function () {
   }
 })
 
+// 窗口处理活动状态时
 app.on('activate', function () {
   // macOS中点击Dock图标时没有已打开的其余应用窗口时,则通常在应用中重建一个窗口
   if (mainWindow === null) {

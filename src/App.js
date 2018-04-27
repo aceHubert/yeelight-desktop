@@ -7,35 +7,62 @@ class App extends Component {
     super(props)
 
     this.state={
-      drives:[]
+      devices:[]
     }
   }
 
   componentDidMount(){
-    
+    //页面渲染后获取一次设备列表
+    ipcRenderer.send('request',{
+      type:'get-devices'
+    });
+
+    //监听主进程消息
     ipcRenderer.on('report', (event, arg) => {
       console.log(arg)
       switch (arg.type)
       {
-        case 'add-drive':
+        case 'add-device': // 添加设备，在页面渲染完成后获取到设备
           this.setState({
-            drives: this.state.drives.concat(arg.config)
+            devices: this.state.devices.concat(arg.config)
           });
+          break;
+        case 'get-devices': //添加设备，在渲染进程未完成就已经获取到的设备
+          if(arg.devices)
+          {
+            let newDevices = this.state.devices.filter(device=>device.did !== key)
+            this.setState({
+              devices: this.state.devices.concat(newDevices)
+            });
+          }
+          break;
+        case 'notify': // 设备消息
+          
           break;
       }
     })
   }
 
-  handleConnectDrive=(driveId)=>{
-    ipcRenderer.send('command',{
+  //连接设备
+  handleConnectDevice=(did)=>{
+    ipcRenderer.send('request',{
       type:'connect',
-      id: driveId
+      did: did
+    })
+  }
+
+  //发送命令
+  handleCommand=(did, command, params)=>{
+    ipcRenderer.send('request',{
+      type:'command',
+      command,
+      params
     })
   }
 
 
   render() {
-    const { drives } = this.state;
+    const { devices } = this.state;
     return (
       <div className="app">
         <header className="app-header">
@@ -43,20 +70,20 @@ class App extends Component {
           <h1 className="app-header__title">Yeelight for desktop</h1>
         </header>
         <div className="app-container">
-          <ul className="app-drives">
+          <ul className="app-devices">
           {
-            drives.map((drive,inx)=>{
-              return <li key={inx} className="app-drive" onClick={this.handleConnectDrive.bind(this,drive.id)}>
-              <img src={require('./images/icon_yeelight_scene_type_1.png')} alt="icon" className="app-drive__icon" />
-              <p className="app-drive__name">{drive.props.name || drive.address}</p>
+            devices.map((device,inx)=>{
+              return <li key={inx} className="app-device" onClick={this.handleConnectDevice.bind(this,device.id)}>
+              <img src={require('./images/icon_yeelight_scene_type_1.png')} alt="icon" className="app-device" />
+              <p className="app-device__name">{device.data.name || device.address}</p>
               </li>
             }) 
              
           }
           {
-            drives.length < 8?
-            Array.from({length: 8- drives.length}).map((item,index)=>{
-              return <li key={index} className="app-drive"></li>
+            devices.length < 8?
+            Array.from({length: 8- devices.length}).map((item,index)=>{
+              return <li key={index} className="app-device"></li>
             }):null         
           }
           </ul>

@@ -31,13 +31,13 @@ body {
   margin-top:180px;
 }
 
-.app-drives{
+.app-devices{
   margin: 30px auto;
   padding: 0;
   width: 680px;
 }
 
-.app-drive{
+.app-device{
   margin: 10px;
   padding: 15px;
   width:150px;
@@ -51,12 +51,12 @@ body {
   vertical-align: top;
 }
 
-.app-drive__icon{
+.app-device__icon{
   width: 80px;
   height: 80px;
 }
 
-.app-drive__name{
+.app-device__name{
   max-width: 140px;
   overflow: hidden;
   white-space: nowrap;

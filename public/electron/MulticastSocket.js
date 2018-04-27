@@ -35,24 +35,6 @@ mc_proto.onDiagram = (arrayBuffer, remote_address, remote_port) => { };
 mc_proto.onDisconnected = () => { };
 
 
-mc_proto.connect = function (callback) {
-    var { config, client } = this;
-    // client.setMulticastTTL(12);
-    client.bind(51234,(err) => {
-        if (err)
-            this.onError('Bind:' + err);
-        else {
-            callback && callback.call(this);
-        }
-    })
-};
-
-mc_proto.disconnect = function () {
-    let { client } = this;
-    client.close();
-};
-
-
 mc_proto.sendDiagram = function (message, callback) {
     if (message) {
         var { config, client } = this;
