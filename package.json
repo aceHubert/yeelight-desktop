@@ -1,19 +1,19 @@
 {
   "name": "yeelight-desktop",
   "version": "0.1.0",
-  "description":"yeelight desktop version",
-  "author":"hubert <yi.xiang@live.cn>",
+  "description": "yeelight desktop version",
+  "author": "hubert <yi.xiang@live.cn>",
   "private": true,
   "main": "public/electron/index.js",
   "homepage": "./",
   "build": {
     "appId": "com.example.yeelight.desktop",
-    "productName":"Yeelight",
+    "productName": "Yeelight",
     "files": [
       "build/**/*",
       "node_modules/**/*"
     ],
-    "directories":{
+    "directories": {
       "output": "dist"
     },
     "dmg": {
@@ -50,6 +50,7 @@
     "electron-pack": "concurrently \"yarn build\" \"build\" "
   },
   "dependencies": {
+    "classname": "^0.0.0",
     "electron-is-dev": "^0.3.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",

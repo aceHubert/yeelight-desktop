@@ -1,6 +1,6 @@
 const path = require('path')
 const url = require('url')
-  // 引入electron并创建一个Browserwindow
+// 引入electron并创建一个Browserwindow
 const { app, BrowserWindow, ipcMain } = require('electron')
 const ControlClient = require('./ControlClient')
 
@@ -42,21 +42,26 @@ function sendToRenderer(channel, msg) {
 ipcMain.on('request', (event, arg) => {
   console.log(arg)
   switch (arg.type) {
-  case 'scan':
-    controlClient.scan();
-    break;
-  case 'get-devices':
-    event.sender.send('report', {
-      type: 'get-devices',
-      devices: controlClient.leds.map(led => ({ led.did, address: led.location, led.data }))
-    });
-    break;
-  case 'connect':
-    controlClient.connectDevice(arg.did);
-    break;
-  case 'command':
-    controlClient.sendCommand(arg.did, arg.message);
-    break;
+    case 'scan':
+      controlClient.scan();
+      break;
+    case 'get-devices':
+      sendToRenderer('report', {
+        type: 'get-devices',
+        devices: Object.keys(controlClient.leds).map(key => ({ 
+          did: controlClient.leds[key].did, 
+          address: controlClient.leds[key].location, 
+          connected: controlClient.leds[key].connected, 
+          data: controlClient.leds[key].data 
+        }))
+      });
+      break;
+    case 'connect':
+      controlClient.connectDevice(arg.did);
+      break;
+    case 'command':
+      controlClient.sendCommand(arg.did, arg.guid, arg.method, arg.params);
+      break;
   }
 
 })
@@ -73,23 +78,22 @@ function initClient() {
   };
 
   cc.onAddDevice = function (did, location, data) {
+    console.log(did,location)
     sendToRenderer('report', {
       type: 'add-device',
       config: {
-        did: did,
+        did,
         address: location,
         data
       }
     })
   };
 
-  cc.onNotify = function (did, data) {
+  cc.onNotify = function (data) {
+    console.log(data)
     sendToRenderer('report', {
       type: 'notify',
-      config: {
-        id: did,
-        data
-      }
+      data
     })
   };
   controlClient = cc;

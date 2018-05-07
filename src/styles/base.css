@@ -34,7 +34,7 @@ body {
 .app-devices{
   margin: 30px auto;
   padding: 0;
-  width: 680px;
+  width: 850px;
 }
 
 .app-device{
@@ -49,6 +49,22 @@ body {
   text-align: center;
   box-sizing: border-box;
   vertical-align: top;
+  position: relative;
+}
+.app-device--offline{
+  color: #ccc;
+}
+
+.app-device--offline::before{
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  background-color: #ccc;
+  opacity: .6;
+  z-index: 1;
 }
 
 .app-device__icon{
@@ -61,4 +77,15 @@ body {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.app-device__power{
+  position: absolute;
+  top: 7px;
+  right: 7px;
+}
+
+.app-device__power img{
+  width: 25px;
+  height: 25px;
 }
