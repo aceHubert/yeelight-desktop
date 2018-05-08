@@ -4,88 +4,57 @@ body {
   font-family: sans-serif;
 }
 
-
-.app-header{
-  padding: 50px;
-  width: 100%;
-  background-color:#363636;
-  color:#fff;
-  position: fixed;  
-  top: 0;
-}
-.app-header__logo{
-  height: 50px;
- display: inline-block;
-  
-}
-
-.app-header__title{
-  margin:0;
-  margin-left: 15px;
-  line-height: 50px;
-  display: inline-block;
-  vertical-align: bottom;
-}
-
-.app-container{
-  margin-top:180px;
-}
-
-.app-devices{
-  margin: 30px auto;
-  padding: 0;
-  width: 850px;
-}
-
-.app-device{
-  margin: 10px;
-  padding: 15px;
-  width:150px;
-  height: 150px;
-  border: 1px dotted #ccc;
-  border-radius: 4px;
-  list-style-type: none;
-  display: inline-block;
-  text-align: center;
-  box-sizing: border-box;
-  vertical-align: top;
-  position: relative;
-}
-.app-device--offline{
-  color: #ccc;
-}
-
-.app-device--offline::before{
-  content: '';
-  position: absolute;
+html,body,#root{
   width: 100%;
   height: 100%;
-  left: 0;
-  top: 0;
-  background-color: #ccc;
-  opacity: .6;
-  z-index: 1;
-}
-
-.app-device__icon{
-  width: 80px;
-  height: 80px;
-}
-
-.app-device__name{
-  max-width: 140px;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
-.app-device__power{
+#root{
+  background:url(../images/bg.jpg);
+}
+
+.app{
+  position: relative;
+  height: calc(100% - 40px);
+  margin: 20px 36px;
+  background:hsla(0,0%,100%,.3);
+  box-shadow: 0px 1px 5px 0px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 3px 1px -2px rgba(0, 0, 0, 0.12);
+}
+
+.app::before{
+  content:'';
+  position:absolute;
+  top: 0;right: 0;left: 0;bottom: 0;
+  filter:blur(5px);
+  background: hsl(20,40%,90%) fixed;
+  background-size: 41px 100%,61px 100%,83px 100%;
+  z-index:-1;
+}
+
+.app-header {
+  padding:12px 20px 12px 36px;
+  background-color: #363636;
+  color: #bdbdbd;
+  position: fixed;
+  top: 40px;
+  left: 10px;
+}
+
+.app-header::before{
+  content: '';
+  width: 26px;
+  background: hsl(0, 50%, 50%) fixed;
   position: absolute;
-  top: 7px;
-  right: 7px;
+  top: 0;left: 0; bottom: 0
 }
 
-.app-device__power img{
-  width: 25px;
-  height: 25px;
+
+.app-header__title {
+  margin: 0;
+ 
+}
+
+.app-container {  
+  padding: 100px 20px 20px;
 }

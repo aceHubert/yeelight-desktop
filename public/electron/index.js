@@ -1,9 +1,9 @@
 const path = require('path')
 const url = require('url')
+const _ = require('lodash')
 // 引入electron并创建一个Browserwindow
-const { app, BrowserWindow, ipcMain } = require('electron')
+const {app, BrowserWindow, ipcMain} = require('electron')
 const ControlClient = require('./ControlClient')
-
 
 const isDev = require('electron-is-dev');
 const kIP = "239.255.255.250";
@@ -16,14 +16,17 @@ let controlClient
 // 创建主窗体
 function createWindow() {
   //创建浏览器窗口,宽高自定义具体大小你开心就好
-  mainWindow = new BrowserWindow({ width: 1120, height: 768 })
+  mainWindow = new BrowserWindow({width: 1120, height: 768, backgroundColor: '#fff'})
 
   // 加载应用----适用于 react 项目
-  mainWindow.loadURL(isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, '../build/index.html')}`);
+  mainWindow.loadURL(isDev
+    ? 'http://localhost:3000'
+    : `file://${path.join(__dirname, '../build/index.html')}`);
 
-  // 打开开发者工具
+  // 打开开发者工具 
   // isDev && mainWindow.webContents.openDevTools()
 
+  //搜索设备
   controlClient.scan();
 
   // 关闭window时触发下列事件.
@@ -35,26 +38,27 @@ function createWindow() {
 
 // 发送消息到渲染客户端
 function sendToRenderer(channel, msg) {
-  mainWindow && mainWindow.webContents.send(channel, msg);
+  mainWindow && mainWindow
+    .webContents
+    .send(channel, msg);
 }
 
-// 接收渲染客户端消息
+// 接收渲染客户端消息 
+// ::第一次页面加载获取一次设备
+ipcMain.on('get-devices', (event, arg) => {
+  event.returnValue = _.map(controlClient.leds, led => ({
+    did: led.did, 
+    address: led.location, 
+    connected: led.connected, 
+    data: led.data 
+  }))
+})
+// ::设备的请求
 ipcMain.on('request', (event, arg) => {
   console.log(arg)
   switch (arg.type) {
     case 'scan':
       controlClient.scan();
-      break;
-    case 'get-devices':
-      sendToRenderer('report', {
-        type: 'get-devices',
-        devices: Object.keys(controlClient.leds).map(key => ({ 
-          did: controlClient.leds[key].did, 
-          address: controlClient.leds[key].location, 
-          connected: controlClient.leds[key].connected, 
-          data: controlClient.leds[key].data 
-        }))
-      });
       break;
     case 'connect':
       controlClient.connectDevice(arg.did);
@@ -68,10 +72,7 @@ ipcMain.on('request', (event, arg) => {
 
 // 初始化客户端
 function initClient() {
-  var cc = new ControlClient({
-    address: kIP,
-    port: kPort
-  });
+  var cc = new ControlClient({address: kIP, port: kPort});
 
   cc.onInfo = function (message) {
     console.log(message);
@@ -84,6 +85,7 @@ function initClient() {
       config: {
         did,
         address: location,
+        connected: false,
         data
       }
     })

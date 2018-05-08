@@ -1,24 +1,42 @@
-import React, { Component } from 'react';
-import classname from 'classname';
+import React, {Component} from 'react';
+import {withStyles} from 'material-ui/styles';
+import grey from 'material-ui/colors/grey';
+import Grid from 'material-ui/Grid';
+import Menu, { MenuItem } from 'material-ui/Menu';
+import Button from 'material-ui/Button';
+import Typography from "material-ui/Typography";
+import { Device } from './components'
 
 const os = window.require('os');
-const { ipcRenderer } = window.require('electron');
+const {ipcRenderer} = window.require('electron');
+
+const styles = theme =>({
+  noDevice:{  
+    padding:'100px 50px',
+    textAlign: 'center'
+  },
+  networkNotify:{
+    marginBottom:50,
+    color:grey[700]
+  }
+})
 
 class App extends Component {
 
+  commands=[];
   constructor(props) {
     super(props)
 
     this.state = {
-      devices: []
+      devices: [],
+      anchorDid: null,
+      anchorEl: null,
     }
   }
 
   componentDidMount() {
     //页面渲染后获取一次设备列表
-    ipcRenderer.send('request', {
-      type: 'get-devices'
-    });
+    this.loadDevices();
 
     //监听主进程消息
     ipcRenderer.on('report', (event, arg) => {
@@ -26,26 +44,20 @@ class App extends Component {
       switch (arg.type) {
         case 'add-device': // 添加设备，在页面渲染完成后获取到设备
           this.setState({
-            devices: this.state.devices.concat(arg.config)
+            devices: this
+              .state
+              .devices
+              .concat(arg.config)
           }, () => {
-            this.handleConnectDevice(arg.config.did);
+            this.connectDevice(arg.config.did);
           });
           break;
-        case 'get-devices': //添加设备，在渲染进程未完成就已经获取到的设备
-          if (arg.devices) {
-            const newDevices = arg.devices.filter(device => !this.state.devices.some(device => device.did === device.did));
-            this.setState({
-              devices: this.state.devices.concat(newDevices)
-            }, () => {
-              newDevices.forEach(device => {
-                !device.connected && this.handleConnectDevice(device.did);
-              });
-            });
-          }
-          break;
         case 'notify': // 设备消息
-          const { did, method, params } = arg.data;
-          const deviceIndex = this.state.devices.findIndex(device => device.did === did);
+          const {did, method, params} = arg.data;
+          const deviceIndex = this
+            .state
+            .devices
+            .findIndex(device => device.did === did);
           const device = this.state.devices[deviceIndex];
           if (method) {
             switch (method) {
@@ -55,77 +67,190 @@ class App extends Component {
               case 'props':
                 Object.assign(device.data, params);
                 break;
+              default:
+                break;
             }
-            this.setState({
-              devices: this.state.devices
-            })
           }
+          break;
+        default:
           break;
       }
     })
   }
 
-  powerSwitch = (did, state) => {
+  handleScanDevices = ()=>this.scanDevices()
+
+  handlePowerSwitch = (did, state) => {
     //{ "id": 1, "method": "set_power", "params":["on", "smooth", 500]}
-    this.handleCommand(did, 1, 'set_power', [state, 'smooth', 500]);
+    this.sendCommand(did, 'set_power', [state?'on':'off', 'smooth', 500]);
+  }
+
+  handleActionMore = (did, target) => {
+    this.setState({
+      anchorDid:did,
+      anchorEl:target
+    })
+  }
+
+  handleDeviceRename= ()=>{
+
+    this.handleMenuClose();
+  }
+
+  handleDeviceControl = ()=>{
+
+    this.handleMenuClose();
+  }
+
+  handleDeviceRemove = ()=>{
+    const { devices, anchorDid } = this.state;
+    const deviceIndex = devices.findIndex(device=>device.did === anchorDid);
+    devices.splice(deviceIndex,1)
+    this.setState({
+      devices: devices
+    })
+    this.removeDevice(anchorDid)
+    this.handleMenuClose();
+  }
+
+  handleMenuClose = ()=>{
+    this.setState({
+      anchorDid:null,
+      anchorEl:null
+    })
+  }
+
+  //从本地加载设备
+  loadDevices = ()=>{
+    let devices = ipcRenderer.sendSync('get-devices');
+    this.setState({
+      devices: []
+      // [
+      //   {
+      //     did:'010AACBDEA',
+      //     address:'192.168.1.223',
+      //     connected:true,
+      //     data:{
+      //       power:'off',
+      //       name:'Color Bulb'
+      //     }
+      //   }, {
+      //     did:'010AACBDEA002',
+      //     address:'192.168.1.223',
+      //     connected:true,
+      //     data:{
+      //       power:'on',
+      //       name:''
+      //     }
+      //   },   {
+      //     did:'010AACBDEA00000',
+      //     address:'192.168.1.223',
+      //     connected:false,
+      //     data:{
+      //       power:'on',
+      //       name:''
+      //     }
+      //   }]
+    }, () => {
+      devices.forEach(device => {
+        this.connectDevice(device.did);
+      })
+    });
+  }
+
+
+
+  //搜索设备
+  scanDevices = () => {
+    ipcRenderer.send('request', {
+      type: 'scan'
+    })
   }
 
   //连接设备
-  handleConnectDevice = (did) => {
+  connectDevice = (did) => {
     ipcRenderer.send('request', {
       type: 'connect',
       did
     })
   }
 
-  //发送命令
-  handleCommand = (did, guid, method, params) => {
+  //移出设备
+  removeDevice = (did) => {
     ipcRenderer.send('request', {
-      type: 'command',
-      did,
-      guid,
-      method,
-      params
+      type: 'remove',
+      did
     })
   }
 
+  //发送命令
+  sendCommand = (did, method, params) => {
+    const command =  {
+      did,
+      id: this.commands.length+1,
+      method,
+      params
+    }
+    this.commands.push(command);
+    ipcRenderer.send('request',Object.assign({ type: 'command'},command) );
+  }
 
-  render() {
-    const { devices } = this.state;
+  render() {    
+    const { classes } = this.props
+    const {devices, anchorEl, anchorDid} = this.state;
+    const anchorDevice = anchorDid && devices.find(device=>device.did === anchorDid);
     const osType = os.type();
-    const osStr = osType === 'Linux'? 'Linux':
-                  osType === 'Darwin'? 'Mac' : 'Windows'
+    const osStr = osType === 'Linux' ? 'Linux' : 
+          osType === 'Darwin' ? 'Mac' : 'Windows'
     return (
       <div className="app">
         <header className="app-header">
-          <img src={require('./images/ic_locale_plugin.png')} className="app-header__logo" alt="logo" />
           <h1 className="app-header__title">Yeelight for {osStr}</h1>
         </header>
         <div className="app-container">
-          <ul className="app-devices">
+        {
+          devices.length > 0 ?
+          <Grid container spacing={24}>
+            {              
+              devices.map((device, index) => (
+              <Grid item xs={12} sm={4} key={index}>
+                <Device
+                  did={device.did}
+                  name={device.data['name']}
+                  mode={device.data['mode']}
+                  ipAddress={device.address}
+                  power={device.data['power'] === 'on'}
+                  connected={device.connected}
+                  onSwitch={state=>this.handlePowerSwitch(device.did,state)}
+                  onActionMore={target=>this.handleActionMore(device.did,target)}
+                  ></Device>
+              </Grid>
+            ))
+          }
+          </Grid> : <div className={classes.noDevice}>
+            <Typography variant="headline" className={classes.networkNotify}>Make sure the bulbs are in same network with your computer.</Typography>
+            <Button variant="raised" color="primary" onClick={this.handleScanDevices} >
+              Search Devices
+            </Button>
+          </div>
+        }  
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={this.handleMenuClose}
+            >
             {
-              devices.map((device, inx) => {
-                return <li key={inx} className={classname('app-device',!device.connected && 'app-device--offline')}>
-                  <img src={require('./images/icon_yeelight_scene_type_1.png')} alt="icon" className="app-device__icon" />
-                  <p className="app-device__name">{device.data.name || device.address}</p>
-                  <a href="javascript:" className="app-device__power" onClick={this.powerSwitch.bind(this, device.did, device.data.power === 'on' ? 'off' : 'on')}>
-                    <img src={device.data.power === 'on' ? require('./images/icon_yeelight_device_list_on.png') : require('./images/icon_yeelight_device_list_off.png')} alt="power" />
-                  </a>
-                </li>
-              })
-
+              anchorDevice && anchorDevice.connected ? <MenuItem onClick={this.handleDeviceRename}>Rename</MenuItem> : null
             }
-            {
-              devices.length < 10 ?
-                Array.from({ length: 10 - devices.length }).map((item, index) => {
-                  return <li key={index} className="app-device"></li>
-                }) : null
+            {            
+              anchorDevice && anchorDevice.connected ? <MenuItem onClick={this.handleDeviceControl}>Control</MenuItem> : null
             }
-          </ul>
+            <MenuItem onClick={this.handleDeviceRemove}>Remove</MenuItem>
+          </Menu>   
         </div>
       </div>
     );
   }
 }
 
-export default App;
+export default  withStyles(styles)(App);
