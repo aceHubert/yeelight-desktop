@@ -24,7 +24,7 @@ const styles = theme =>({
   },
   title:{
     fontSize:'1.125rem',
-    maxWidth: 124,
+    maxWidth: 172,
     overflow: 'hidden',
     whiteSpace: 'nowarp',
     textOverflow: 'ellipsis',

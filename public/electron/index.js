@@ -1,22 +1,27 @@
 const path = require('path')
-const url = require('url')
+const fs = require('fs')
 const _ = require('lodash')
 // 引入electron并创建一个Browserwindow
-const {app, BrowserWindow, ipcMain} = require('electron')
+const electron = require('electron')
+const  {app, BrowserWindow, ipcMain, Menu} = electron
 const ControlClient = require('./ControlClient')
 
 const isDev = require('electron-is-dev');
+const configDir = path.join(__dirname,'..','config');
+const configFilePath = path.resolve(configDir, 'devices.config'); 
 const kIP = "239.255.255.250";
 const kPort = 1982;
+
 
 // 保持window对象的全局引用,避免JavaScript对象被垃圾回收时,窗口被自动关闭.
 let mainWindow
 let controlClient
+let devices = []
 
 // 创建主窗体
 function createWindow() {
   //创建浏览器窗口,宽高自定义具体大小你开心就好
-  mainWindow = new BrowserWindow({width: 1120, height: 768, backgroundColor: '#fff'})
+  mainWindow = new BrowserWindow({width: 1120, height: 768, minWidth: 768, minHeight: 600, title: 'Yeelight Desktop', backgroundColor: '#fff'})
 
   // 加载应用----适用于 react 项目
   mainWindow.loadURL(isDev
@@ -24,12 +29,39 @@ function createWindow() {
     : `file://${path.join(__dirname, '../build/index.html')}`);
 
   // 打开开发者工具 
-  // isDev && mainWindow.webContents.openDevTools()
+  //isDev && mainWindow.webContents.openDevTools() 
+  
+  let menuTemplate = [{
+    label: 'File',
+    submenu: [{
+      label: 'Exit',
+      role: 'quit'
+    }]
+  }, {
+    label: 'Operate',
+    submenu:[{
+      label: 'Scan',
+      click:()=>{
+        controlClient.scan();
+      }
+    }]
+  }, {
+    label: 'View',
+    submenu: [{
+      label: 'Reload',
+      role: 'reload'
+    }, {
+      label: 'Force Reload',
+      role: 'forcereload'
+    }, {
+      label: 'Dev Tools',
+      role: 'toggledevtools'
+    }]
+  }]
+  let menu = Menu.buildFromTemplate(menuTemplate)
+  mainWindow.setMenu(menu)
 
-  //搜索设备
-  controlClient.scan();
-
-  // 关闭window时触发下列事件.
+  //关闭window时触发下列事件.
   mainWindow.on('closed', function () {
     mainWindow = null
   })
@@ -43,25 +75,35 @@ function sendToRenderer(channel, msg) {
     .send(channel, msg);
 }
 
-// 接收渲染客户端消息 
-// ::第一次页面加载获取一次设备
-ipcMain.on('get-devices', (event, arg) => {
-  event.returnValue = _.map(controlClient.leds, led => ({
-    did: led.did, 
-    address: led.location, 
-    connected: led.connected, 
-    data: led.data 
-  }))
-})
-// ::设备的请求
+// 设备的请求
 ipcMain.on('request', (event, arg) => {
   console.log(arg)
   switch (arg.type) {
     case 'scan':
       controlClient.scan();
       break;
+    case 'get-devices':   
+      fs.readFile(configFilePath,'utf-8',(err,data)=>{
+        if(!err){
+          devices = JSON.parse(data.toString());
+        }else if(err.code==='ENOENT'){         
+          fs.writeFile(configFilePath,'[]');
+        }
+        sendToRenderer('report', {
+          type: 'add-devices',
+          devices: devices
+        })
+      });     
+      break;
     case 'connect':
-      controlClient.connectDevice(arg.did);
+      const device = devices.find(device=>device.did=== arg.did);
+      if(device)
+        controlClient.connectDevice(device.did,device.address);
+      break;
+    case 'remove':
+      const deviceIndex = devices.findIndex(device=>device.did===arg.did);
+      devices.splice(deviceIndex,1);
+      fs.writeFile(configFilePath,JSON.stringify(devices,2),(err)=>{console.error(err)});
       break;
     case 'command':
       controlClient.sendCommand(arg.did, arg.guid, arg.method, arg.params);
@@ -79,15 +121,20 @@ function initClient() {
   };
 
   cc.onAddDevice = function (did, location, data) {
-    console.log(did,location)
+    console.log(did, location)
+    devices.push({
+      did,
+      address:location
+    })
+    fs.writeFile(configFilePath,JSON.stringify(devices,2),(err)=>{console.error(err)});
     sendToRenderer('report', {
-      type: 'add-device',
-      config: {
+      type: 'add-devices',
+      devices: [{
         did,
         address: location,
         connected: false,
         data
-      }
+      }]
     })
   };
 
@@ -103,8 +150,26 @@ function initClient() {
 
 // 当 Electron 完成初始化并准备创建浏览器窗口时调用此方法
 app.on('ready', () => {
+  //创建配置文件夹
+  if(!fs.existsSync(configDir))
+  {
+    fs.mkdirSync(configDir)
+  }
+
   initClient();
   createWindow();
+
+  //系统即将被挂起
+  electron.powerMonitor.on('suspend',()=>{
+    console.log('The system is going to sleep');
+  })
+  //系统恢复
+  electron.powerMonitor.on('resume',()=>{
+    //恢复后重新连接
+    _.map(devices,device=>{
+      controlClient.connectDevice(device.did,device.address);
+    })
+  })
 })
 
 // 所有窗口关闭时退出应用.

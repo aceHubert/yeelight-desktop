@@ -63,9 +63,7 @@ proto.onDiagram = function (message) {
     this.leds[did] = {
       did,
       location: loc,
-      data,
-      connected: false,
-      client: null
+      data
     };
     this.onAddDevice(did, loc, data);
   }
@@ -96,34 +94,36 @@ proto.scan = function () {
 };
 
 // 连接设备
-proto.connectDevice = function (did) {
-  var led = this.leds[did];
-  tmp = led.location.split(":");
-  address = tmp[0];
-  port = tmp[1];
-
-  if (!led.connected) {
-    this.onInfo("Connecting ...");
-
-    const client = net.connect(port, address, () => {
-      led.connected = true;
-      this.onNotify({did, method: 'connect', params: 1});
-    })
-    client.on('data', (message) => {
-      message = message.toString('utf-8');
-      this.onNotify(Object.assign({did}, JSON.parse(message)));
-    })
-    client.on('error', (error) => {
-      this.onError({did, error});
-    })
-    client.on('end', () => {
-      led.connected = false;
-      this.onNotify({did, method: 'connect', params: 0});
-    })
-    led.client = client;
-  } else {
-    this.onInfo("already connected");
+proto.connectDevice = function (did,location) {
+  if(!this.leds.keys || this.leds.keys.contains(did))
+  {
+    this.leds[did] ={
+      did,
+      location
+    };
   }
+  let led = this.leds[did];
+  const tmp = led.location.split(":");
+  const address = tmp[0];
+  const port = tmp[1];
+
+  this.onInfo("Connecting ...");
+
+  const client = net.connect(port, address, () => {
+    this.onNotify({did, type: 'connect'});
+  })
+  client.on('data', (message) => {
+    message = message.toString('utf-8');
+    this.onNotify(Object.assign({did}, JSON.parse(message)));
+  })
+  client.on('error', (error) => {
+    this.onNotify({did, type: 'error', error});
+  })
+  client.on('end', () => {
+    led.connected = false;
+    this.onNotify({did, type: 'disconnect'});
+  })
+  led.client = client;
 };
 
 // 发送命令

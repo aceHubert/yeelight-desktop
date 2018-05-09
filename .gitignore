@@ -60,4 +60,4 @@ typings/
 dist/
 build/*
 !build/icons
-
+devices.config

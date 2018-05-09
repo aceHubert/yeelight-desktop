@@ -1,3 +1,18 @@
+/*滚动条样式*/
+::-webkit-scrollbar{
+  height: 8px;
+  width: 5px!important;
+  background: rgba(148,151,153,0.20);
+}
+::-webkit-scrollbar-thumb{
+  border-radius: 2px;
+  background: rgba(179,179,179,0.80);
+}
+::-webkit-scrollbar:horizontal{
+  height:8px!important;
+  margin-bottom:2px
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -20,6 +35,7 @@ html,body,#root{
   margin: 20px 36px;
   background:hsla(0,0%,100%,.3);
   box-shadow: 0px 1px 5px 0px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 3px 1px -2px rgba(0, 0, 0, 0.12);
+  overflow: auto;
 }
 
 .app::before{

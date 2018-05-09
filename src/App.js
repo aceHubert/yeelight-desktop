@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import _ from 'lodash'
 import {withStyles} from 'material-ui/styles';
 import grey from 'material-ui/colors/grey';
 import Grid from 'material-ui/Grid';
@@ -34,48 +35,49 @@ class App extends Component {
     }
   }
 
-  componentDidMount() {
-    //页面渲染后获取一次设备列表
-    this.loadDevices();
-
+  componentWillMount(){
     //监听主进程消息
     ipcRenderer.on('report', (event, arg) => {
       console.log(arg)
       switch (arg.type) {
-        case 'add-device': // 添加设备，在页面渲染完成后获取到设备
+        case 'add-devices':
+          const devices = _.map(arg.devices,device=>({did:device.did, address:device.address, connected:Boolean(device.connected), data:device.data||{}}));
           this.setState({
-            devices: this
-              .state
-              .devices
-              .concat(arg.config)
+            devices: this.state.devices.concat(devices)
           }, () => {
-            this.connectDevice(arg.config.did);
+            devices.forEach(device=>{
+              this.connectDevice(device.did);
+            })          
           });
           break;
         case 'notify': // 设备消息
-          const {did, method, params} = arg.data;
-          const deviceIndex = this
-            .state
-            .devices
-            .findIndex(device => device.did === did);
-          const device = this.state.devices[deviceIndex];
-          if (method) {
-            switch (method) {
-              case 'connect':
-                device.connected = !!params;
-                break;
-              case 'props':
-                Object.assign(device.data, params);
-                break;
-              default:
-                break;
-            }
+          const {did, type, params, error} = arg.data;
+          const device = this.state.devices.find(device => device.did === did);
+          switch (type) {
+            case 'connect':
+              device.connected = true;
+              break;
+            case 'disconnect':
+              device.connected = false;
+              break;
+            case 'props':
+              Object.assign(device.data, params);
+              break;
+            case 'error':
+              console.error(error);
+              break;
+            default:
+              break;
           }
           break;
         default:
           break;
       }
     })
+  }
+
+  componentDidMount() {   
+    this.loadDevices();   
   }
 
   handleScanDevices = ()=>this.scanDevices()
@@ -122,43 +124,10 @@ class App extends Component {
 
   //从本地加载设备
   loadDevices = ()=>{
-    let devices = ipcRenderer.sendSync('get-devices');
-    this.setState({
-      devices: []
-      // [
-      //   {
-      //     did:'010AACBDEA',
-      //     address:'192.168.1.223',
-      //     connected:true,
-      //     data:{
-      //       power:'off',
-      //       name:'Color Bulb'
-      //     }
-      //   }, {
-      //     did:'010AACBDEA002',
-      //     address:'192.168.1.223',
-      //     connected:true,
-      //     data:{
-      //       power:'on',
-      //       name:''
-      //     }
-      //   },   {
-      //     did:'010AACBDEA00000',
-      //     address:'192.168.1.223',
-      //     connected:false,
-      //     data:{
-      //       power:'on',
-      //       name:''
-      //     }
-      //   }]
-    }, () => {
-      devices.forEach(device => {
-        this.connectDevice(device.did);
-      })
+    ipcRenderer.send('request',{
+      type:'get-devices'
     });
   }
-
-
 
   //搜索设备
   scanDevices = () => {
@@ -187,7 +156,7 @@ class App extends Component {
   sendCommand = (did, method, params) => {
     const command =  {
       did,
-      id: this.commands.length+1,
+      guid: this.commands.length+1,
       method,
       params
     }
@@ -213,7 +182,7 @@ class App extends Component {
           <Grid container spacing={24}>
             {              
               devices.map((device, index) => (
-              <Grid item xs={12} sm={4} key={index}>
+              <Grid item sm={12} md={6} lg={4} key={index}>
                 <Device
                   did={device.did}
                   name={device.data['name']}
