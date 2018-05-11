@@ -55,7 +55,7 @@ const styles = theme =>({
   }
 })
 
-class Device extends Component {
+class DeviceBox extends Component {
 
   static defaultProps={
     power:false,
@@ -81,7 +81,7 @@ class Device extends Component {
           <div className={classes.deviceIcon}>
             <CardMedia
               className={classes.cover}
-              image={require('../images/icon_yeelight_device_badge_group_small.png')}
+              image={require('../../images/icon_yeelight_device_badge_group_small.png')}
               title={mode}/>
           </div>  
           <div className={classes.details}>
@@ -117,7 +117,7 @@ class Device extends Component {
   }
 }
 
-Device.propTypes = {
+DeviceBox.propTypes = {
   did: PropTypes.string.isRequired,
   name: PropTypes.string,
   mode: PropTypes.string,
@@ -128,4 +128,4 @@ Device.propTypes = {
   onActionMore: PropTypes.func
 }
 
-export default withStyles(styles, { withTheme: true })(Device)
+export default withStyles(styles, { withTheme: true })(DeviceBox)

@@ -1,12 +1,21 @@
 import React, {Component} from 'react';
+import classname from 'classname'
 import _ from 'lodash'
 import {withStyles} from 'material-ui/styles';
+import red from 'material-ui/colors/red';
 import grey from 'material-ui/colors/grey';
 import Grid from 'material-ui/Grid';
+import GridList, { GridListTile } from 'material-ui/GridList';
 import Menu, { MenuItem } from 'material-ui/Menu';
 import Button from 'material-ui/Button';
 import Typography from "material-ui/Typography";
-import { Device } from './components'
+import Dialog from 'material-ui/Dialog';
+import AppBar from 'material-ui/AppBar';
+import Toolbar from 'material-ui/Toolbar';
+import IconButton from 'material-ui/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
+import {SketchPicker, HuePicker} from 'react-color'
+import { DeviceBox, WarmLightPicker } from './components'
 
 const os = window.require('os');
 const {ipcRenderer} = window.require('electron');
@@ -19,6 +28,51 @@ const styles = theme =>({
   networkNotify:{
     marginBottom:50,
     color:grey[700]
+  },
+  appBar: {
+    position: 'relative',
+  },
+  flex: {
+    flex: 1,
+  },
+  operatePanel: {
+    padding: '20px 100px',
+    boxSizing: 'border-box'
+  },
+  operateListTile:{
+    position: 'relative',
+    padding: '20px 0 10px',
+    width: '100%',
+    height: '100%',
+    textAlign: 'center',
+    background: grey[200],
+    boxSizing: 'border-box'
+  },
+  tileTitle:{
+    padding: '1px 3px',
+    position: 'absolute',
+    right: '0',
+    top: '0',
+    fontSize: theme.typography.body2.fontSize,
+    color: grey[500],
+    background: grey[300],
+    borderRadius: '0 0 0 3px'
+  },
+  colorPanel:{
+    margin:'auto'
+  },
+  powerIcon:{
+    fill: grey[500],
+    width: '1em',
+    height: '1em',
+    display: 'inline-block',
+    fontSize: 24,
+    transition: 'fill 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+    userSelect: 'none',
+    flexShrink: 0
+  },
+  powerOn:{
+    fill: red[500]
   }
 })
 
@@ -31,7 +85,10 @@ class App extends Component {
     this.state = {
       devices: [],
       anchorDid: null,
-      anchorEl: null,
+      anchorEl: null,     
+      modalRenameOpen:false, 
+      modalOperateOpen:false,
+      color:'#fff'
     }
   }
 
@@ -100,7 +157,9 @@ class App extends Component {
   }
 
   handleDeviceControl = ()=>{
-
+    this.setState({
+      modalOperateOpen:true
+    })
     this.handleMenuClose();
   }
 
@@ -117,9 +176,18 @@ class App extends Component {
 
   handleMenuClose = ()=>{
     this.setState({
-      anchorDid:null,
       anchorEl:null
     })
+  }
+
+  handleModalClose= ()=>{
+    this.setState({
+      modalOperateOpen:false
+    })
+  }
+
+  handleColorChanged= (color,event)=>{
+    console.log(color);
   }
 
   //从本地加载设备
@@ -164,9 +232,17 @@ class App extends Component {
     ipcRenderer.send('request',Object.assign({ type: 'command'},command) );
   }
 
+  onChange(color){
+    console.log('2',color);
+  }
+
+  onChangeComplete(color){
+    console.log('1',color);
+  }
+
   render() {    
     const { classes } = this.props
-    const {devices, anchorEl, anchorDid} = this.state;
+    const {devices, anchorEl, anchorDid, modalOperateOpen, color} = this.state;
     const anchorDevice = anchorDid && devices.find(device=>device.did === anchorDid);
     const osType = os.type();
     const osStr = osType === 'Linux' ? 'Linux' : 
@@ -183,7 +259,7 @@ class App extends Component {
             {              
               devices.map((device, index) => (
               <Grid item sm={12} md={6} lg={4} key={index}>
-                <Device
+                <DeviceBox
                   did={device.did}
                   name={device.data['name']}
                   mode={device.data['mode']}
@@ -192,7 +268,7 @@ class App extends Component {
                   connected={device.connected}
                   onSwitch={state=>this.handlePowerSwitch(device.did,state)}
                   onActionMore={target=>this.handleActionMore(device.did,target)}
-                  ></Device>
+                  ></DeviceBox>
               </Grid>
             ))
           }
@@ -209,13 +285,67 @@ class App extends Component {
             onClose={this.handleMenuClose}
             >
             {
-              anchorDevice && anchorDevice.connected ? <MenuItem onClick={this.handleDeviceRename}>Rename</MenuItem> : null
+              anchorDevice && anchorDevice.connected ? <MenuItem onClick={this.handleDeviceRename}>Set Name</MenuItem> : null
             }
             {            
-              anchorDevice && anchorDevice.connected ? <MenuItem onClick={this.handleDeviceControl}>Control</MenuItem> : null
+              anchorDevice && anchorDevice.connected ? <MenuItem onClick={this.handleDeviceControl}>Operate</MenuItem> : null
             }
             <MenuItem onClick={this.handleDeviceRemove}>Remove</MenuItem>
-          </Menu>   
+          </Menu> 
+          <Dialog fullScreen open={modalOperateOpen} onClose={this.handleModalClose}>
+            <AppBar className={classes.appBar}>
+              <Toolbar>
+                <Typography variant="title" color="inherit" className={classes.flex}>{anchorDevice?((anchorDevice.data &&anchorDevice.data['name'])||anchorDevice.address||anchorDevice.did) :'Device Name'}</Typography>
+                <IconButton color="inherit" onClick={this.handleModalClose} aria-label="Close">
+                  <CloseIcon/>
+                </IconButton>
+              </Toolbar>
+            </AppBar> 
+            <div className={classes.operatePanel}>           
+              <GridList cellHeight={78} cols={5} spacing={12}>
+                <GridListTile cols={1}>
+                  <div className={classes.operateListTile}>
+                    <span className={classes.tileTitle}>power</span>
+                    <IconButton aria-label="Power" onClick={this.handleSwitch}>
+                      <svg className={classname(classes.powerIcon,anchorDevice&&anchorDevice.data['power'] === 'on'&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
+                        <g>
+                          <path d="M10.5,1.674V4c1.215,0.912,2,2.364,2,4c0,2.762-2.238,5-5,5s-5-2.238-5-5c0-1.636,0.785-3.088,2-4
+                            V1.674C2.135,2.797,0.5,5.208,0.5,8c0,3.866,3.134,7,7,7s7-3.134,7-7C14.5,5.208,12.865,2.797,10.5,1.674z"/>
+                          <path d="M8.5,7.003V0.997C8.5,0.446,8.056,0,7.5,0c-0.553,0-1,0.453-1,0.997v6.006C6.5,7.554,6.944,8,7.5,8
+                            C8.053,8,8.5,7.547,8.5,7.003z"/>
+                        </g>
+                      </svg>           
+                    </IconButton>
+                  </div>
+                </GridListTile>
+                <GridListTile cols={4}>
+                  <div className={classes.operateListTile}>
+                    <span className={classes.tileTitle}>brightness</span>
+                    <HuePicker onChange={this.onChange} onChangeComplete={this.onChangeComplete}></HuePicker>
+                    <WarmLightPicker onChange={this.onChange}></WarmLightPicker>
+                  </div>
+                </GridListTile>
+                <GridListTile rows={5} cols={1}>
+                  <div className={classes.operateListTile}>
+                    <span className={classes.tileTitle}>white</span>
+                  
+                  </div>
+                </GridListTile>
+                <GridListTile rows={5} cols={3}>
+                  <div className={classes.operateListTile}>
+                    <span className={classes.tileTitle}>color</span>
+                    <SketchPicker color={color} width={300} disableAlpha={true} className={classes.colorPanel}  onChangeComplete={this.handleColorChanged}>
+                    </SketchPicker>
+                  </div>
+                </GridListTile>
+                <GridListTile rows={5} cols={1}>
+                  <div className={classes.operateListTile}>
+                    <span className={classes.tileTitle}>flow</span>
+                  </div>
+                </GridListTile>
+              </GridList>
+            </div>
+          </Dialog>  
         </div>
       </div>
     );
