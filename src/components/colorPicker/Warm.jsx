@@ -75,14 +75,14 @@ class WarmLight extends Component {
     }
 
     const bgColorStyle ={
-        background:`hsl(${this.props.hsl.h},100%,75%)`
+        background:`hsl(${this.props.hsl.h},100%,50%)`
     }
 
     let pointerOffset ={
       position: 'absolute'
     }
 
-    const offset =  this.props.hsv.s*2*100
+    const offset =  this.props.hsv.s*100
     if(direction === 'vertical')
     {
       pointerOffset.top=`${ offset > 100 ? 100 : offset }%`;

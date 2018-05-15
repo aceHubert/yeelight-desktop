@@ -16,7 +16,10 @@ const kPort = 1982;
 // 保持window对象的全局引用,避免JavaScript对象被垃圾回收时,窗口被自动关闭.
 let mainWindow
 let controlClient
-let config = {}
+let config = {
+  theme:'light',
+  devices:[]
+}
 
 // 创建主窗体
 function createWindow() {
@@ -87,10 +90,7 @@ ipcMain.on('request', (event, arg) => {
         if(!err){
           config = JSON.parse(data.toString());
         }else if(err.code==='ENOENT'){         
-          fs.writeFile(configFilePath,Json.stringify({
-            theme:'light',
-            devices:[]
-          },2));
+          saveConfig();
         }
         sendToRenderer('report', {
           type: 'get_config',

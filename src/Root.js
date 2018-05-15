@@ -16,12 +16,20 @@ import Tooltip from 'material-ui/Tooltip'
 import CloseIcon from '@material-ui/icons/Close';
 import {withStyles} from 'material-ui/styles';
 import yellow from 'material-ui/colors/yellow';
-import blueGrey from 'material-ui/colors/blueGrey';
 import { DeviceBox, ColorPicker } from './components'
 import color from './helpers/colorPicker/color'
 
 const os = window.require('os');
 const {ipcRenderer} = window.require('electron');
+
+// romance: 0,1,4000,1,5838189,1,4000,1,6689834,1
+// candle flicker: ,0,800,2,2700,50,800,2,2700,30,1600,2,2700,80,800,2,2700,60,1200,2,2700,90,2400,2,2700,50,1200,2,2700,80,800,2,2700,60,400,2,2700,70
+// birthday: 0,1,1996,1,14438425,80,1996,1,14448670,80,1996,1,11153940,80
+// movie : color_mode: 1  bright: 50  rgb: 1315890
+// dating night: color_mode: 1  rgb: 16737792 bright: 50
+// night mode：color_mode: 1  rgb: 16750848 bright: 1
+// home: color_mode: 2 bright: 80
+
 
 const styles = theme =>({
   app:{
@@ -161,7 +169,7 @@ const commonColors =[{hex:'#F44336',title:'red'}
 ]
 
 class App extends Component {
-  commands=[];
+  commands={};
   constructor(props) {
     super(props)
 
@@ -188,7 +196,11 @@ class App extends Component {
 
   
   handleColorChanged= (did,color)=>{
-     this.setHSV(did,color.hsv.h,color.hsv.s);
+     this.setHSV(did,color.hsv.h,color.hsv.s*100);
+  }
+
+  handleTemperature= (did,color)=>{
+    this.setCtAbx(did, 6500 - color.hsv.s *(6500-1700));
   }
   
   handleActionMore = (did, target) => {
@@ -239,6 +251,11 @@ class App extends Component {
   }
   
 
+  getProp = (did,...props) => {
+    //{"id":1,"method":"get_prop","params":["power", "not_exist", "bright"]}
+    this.sendCommand(did, 'get_prop', props);
+  }
+
   setDefault = (did) => {
     //{"id":1,"method":"set_default","params":[]}
     this.sendCommand(did, 'set_default', []);
@@ -254,14 +271,14 @@ class App extends Component {
     this.sendCommand(did, 'toggle', []);
   }
 
-  getProp = (did,...props) => {
-    //{"id":1,"method":"get_prop","params":["power", "not_exist", "bright"]}
-    this.sendCommand(did, 'get_prop', [props]);
-  }
-
   setBright = (did, brightness) => {
     //{"id":1,"method":"set_bright","params":[50, "smooth", 500]}
     this.sendCommand(did, 'set_bright',[brightness, 'smooth', 500]);
+  }
+
+  setCtAbx = (did, ct)=>{
+    //{"id":1,"method":"set_ct_abx","params":[3500, "smooth", 500]}
+    this.sendCommand(did, 'set_ct_abx',[ct, 'smooth', 500]);
   }
 
   //rgb: 0-16777215
@@ -319,11 +336,11 @@ class App extends Component {
   sendCommand = (did, method, params) => {
     const command =  {
       did,
-      guid: this.commands.length+1,
+      guid: _.keys(this.commands).length+1,
       method,
       params
     }
-    this.commands.push(command);
+    this.commands[command.guid] = command;
     ipcRenderer.send('request',Object.assign({ type: 'command'},command) );
   }
 
@@ -349,24 +366,35 @@ class App extends Component {
           }
           break;
         case 'notify': // 设备消息
-          const {did, type, params, error} = arg.data;
+          const {did, id, type, method, params, result, error} = arg.data;
           const device = this.state.devices.find(device => device.did === did);
-          switch (type) {
+          switch (type||method) {
             case 'connect':
               device.connected = true;
+              this.getProp(did,'name','power','bright');
               break;
             case 'disconnect':
               device.connected = false;
               break;
             case 'props':
-              Object.assign(device.data, params);
+               device.data = Object.assign({},device.data, params);
               break;
             case 'error':
               console.error(error);
               break;
             default:
+              const command = this.commands[id];
+              if(command && command.method === 'get_prop')
+              {
+                const newParams = _.zipObject(command.params,result);
+                device.data = Object.assign({},device.data, newParams);
+              }
               break;
           }
+          if(type !== 'error')
+            this.setState({
+              devices: this.state.devices
+            })
           break;
         default:
           break;
@@ -448,7 +476,7 @@ class App extends Component {
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>power</span>
                     <Tooltip title={anchorDevice&&anchorDevice.data['power'] === 'on'?'Power Off':'Power On'}>
-                      <IconButton aria-label="Power" onClick={()=>this.handlePowerSwitch(anchorDevice.did,!anchorDevice.data['power']==='on' )}>
+                      <IconButton aria-label="Power" onClick={()=>this.handlePowerSwitch(anchorDevice.did,anchorDevice.data['power']!=='on' )}>
                         <svg className={classname(classes.powerIcon,anchorDevice&&anchorDevice.data['power'] === 'on'&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
                           <g>
                             <path d="M10.5,1.674V4c1.215,0.912,2,2.364,2,4c0,2.762-2.238,5-5,5s-5-2.238-5-5c0-1.636,0.785-3.088,2-4
@@ -465,19 +493,14 @@ class App extends Component {
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>brightness</span>              
                   </div>
-                </GridListTile>
-                <GridListTile rows={4} cols={1}>
-                  <div className={classes.operateListTile}>
-                    <span className={classes.tileTitle}>recommend</span>                      
-                  </div>
-                </GridListTile>
+                </GridListTile>                
                 <GridListTile rows={4} cols={1}>
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>white</span>                    
-                    <ColorPicker.Warm direction="vertical" className={classes.colorPanel} onChangeComplete={color=>this.handleColorChanged(anchorDevice.did,color)}></ColorPicker.Warm>   
+                    <ColorPicker.Warm direction="vertical" className={classes.colorPanel} onChangeComplete={color=>this.handleTemperature(anchorDevice.did,color)}></ColorPicker.Warm>   
                   </div>
                 </GridListTile>
-                <GridListTile rows={4} cols={3}>
+                <GridListTile rows={4} cols={2}>
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>color</span>
                     <ColorPicker.HSV className={classes.colorPanel} onChangeComplete={color=>this.handleColorChanged(anchorDevice.did,color)}>
@@ -489,6 +512,11 @@ class App extends Component {
                       ))
                     }
                     </div>
+                  </div>
+                </GridListTile>
+                <GridListTile rows={4} cols={2}>
+                  <div className={classes.operateListTile}>
+                    <span className={classes.tileTitle}>recommend</span>                      
                   </div>
                 </GridListTile>
                 <GridListTile rows={3} cols={5}>

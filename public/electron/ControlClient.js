@@ -103,6 +103,12 @@ proto.connectDevice = function (did,location) {
     };
   }
   let led = this.leds[did];
+  if(led.connected)
+  {
+    this.onNotify({did, type: 'connect'});
+    console.log('Device is alreay connected');
+    return;
+  }
   const tmp = led.location.split(":");
   const address = tmp[0];
   const port = tmp[1];
@@ -110,6 +116,7 @@ proto.connectDevice = function (did,location) {
   this.onInfo("Connecting ...");
 
   const client = net.connect(port, address, () => {
+    led.connected=true;
     this.onNotify({did, type: 'connect'});
   })
   client.on('data', (message) => {

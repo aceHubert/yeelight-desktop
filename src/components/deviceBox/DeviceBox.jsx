@@ -64,6 +64,7 @@ class DeviceBox extends Component {
   }
 
   handleSwitch=()=>{
+    console.log(this.props.power)
      this.props.onSwitch(!this.props.power);
   }
 
