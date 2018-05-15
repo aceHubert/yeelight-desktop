@@ -54,12 +54,12 @@
     "classname": "^0.0.0",
     "electron-is-dev": "^0.3.0",
     "lodash": "^4.17.10",
-    "material-ui": "^1.0.0-beta.45",
+    "material-ui": "^1.0.0-beta.47",
     "prop-types": "^15.6.1",
     "react": "^16.2.0",
-    "react-color": "^2.14.1",
     "react-dom": "^16.2.0",
-    "react-scripts": "1.1.1"
+    "react-scripts": "1.1.1",
+    "tinycolor2": "^1.4.1"
   },
   "devDependencies": {
     "concurrently": "^3.5.1",

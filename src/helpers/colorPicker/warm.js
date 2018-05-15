@@ -8,42 +8,41 @@ export const calculateChange = (e, skip, props, container) => {
   const top = y - (container.getBoundingClientRect().top + window.pageYOffset)
 
   if (props.direction === 'vertical') {
-    let l
+    let s
     if (top < 0) {
-      l = 100
+      s = 0
     } else if (top > containerHeight) {
-      l = 50
+      s = 50
     } else {
-      const percent = l = -((top * 100) / containerHeight) + 100
-      l = 50 + (100-percent)/2
+      const percent = (top * 100) / containerHeight
+      s = percent/2
     }
-
-    if (props.hsl.l !== l) {
+    if (props.hsv.s !== s) {
       return {
-        h: 29,
-        s: 1,
-        l,
-        a: props.hsl.a,
+        h: props.hsv.h,
+        s: s/100,
+        v: props.hsv.v,
+        a: 1,
         source: 'rgb',
       }
     }
   } else {
-    let l
+    let s
     if (left < 0) {
-      l = 100
+      s =0
     } else if (left > containerWidth) {
-      l = 50
+      s = 50
     } else {
       const percent = (left * 100) / containerWidth
-      l = 50 + (100-percent)/2
+      s =percent/2
     }
 
-    if (props.hsl.l !== l) {
+    if (props.hsv.s !== s) {
       return {
-        h: 29,
-        s: 1,
-        l,
-        a: props.hsl.a,
+        h: props.hsv.h,
+        s: s/100,
+        v: props.hsv.v,
+        a: 1,
         source: 'rgb',
       }
     }

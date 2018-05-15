@@ -1,11 +1,10 @@
-import React from 'react';
+import React from 'react'
+import { Component } from '../../libs'
 import PropTypes from 'prop-types'
-import classname from 'classname'
-import debounce from 'lodash/debounce'
-import {withStyles} from 'material-ui/styles';
-import { CustomPicker } from 'react-color';
-import Pointer from "./Pointer";
-import { calculateChange } from "./calculateChange";
+import {withStyles} from 'material-ui/styles'
+import Pointer from "./WarmPointer"
+import ColorWarp from './ColorWarp'
+import { calculateChange } from "../../helpers/colorPicker/warm"
 
 const styles = theme=>({  
   warp:{
@@ -20,30 +19,25 @@ const styles = theme=>({
     borderRadius: '2px'
   },
   warmColor: {
-    height: '100%',
-    background: 'rgb(255,150,50)'
+    height: '100%'
   },
   horizontal: {
-    background: '-webkit-linear-gradient(to right, #fff, rgba(255,255,255,0))',
+    // background: '-webkit-linear-gradient(to right, #fff, rgba(255,255,255,0))',
     background: 'linear-gradient(to right, #fff, rgba(255,255,255,0))'
   },
   vertical: {
-    background: '-webkit-linear-gradient(to top, #fff, rgba(255,255,255,0))',
-    background: 'linear-gradient(to top, #fff, rgba(255,255,255,0))'
+    // background: '-webkit-linear-gradient(to top, #fff, rgba(255,255,255,0))',
+    background: 'linear-gradient(to bottom, #fff, rgba(255,255,255,0))'
   }
 
 })
 
-class WarmLightPicker extends React.Component {
+class WarmLight extends Component {
 
   static defaultProps={
     width: 316,
     height: 16,
     direction: 'horizontal'
-  }
-
-  constructor(props){
-    super(props)
   }
 
   componentWillUnmount() {
@@ -52,7 +46,6 @@ class WarmLightPicker extends React.Component {
 
   handleChange = (e, skip)=>{
     const change = calculateChange(e,skip,this.props,this.container);
-    console.log(change)
     change && this.props.onChange && this.props.onChange(change,e);
   }
 
@@ -81,21 +74,32 @@ class WarmLightPicker extends React.Component {
       height: height,
     }
 
-    const pointerStyle ={
-      position: 'absolute',
-      left: `${ (100 - (this.props.hsl.l * 100))*2 }%`,
+    const bgColorStyle ={
+        background:`hsl(${this.props.hsl.h},100%,75%)`
     }
 
-    return <div className="warmlight-picker"  style={rootStyle}>
+    let pointerOffset ={
+      position: 'absolute'
+    }
+
+    const offset =  this.props.hsv.s*2*100
+    if(direction === 'vertical')
+    {
+      pointerOffset.top=`${ offset > 100 ? 100 : offset }%`;
+    }else{
+      pointerOffset.left=`${ offset > 100 ? 100 : offset }%`;
+    }
+
+    return <div className={this.className('warmlight-picker')}  style={this.style(rootStyle)}>
       <div className={classes.warp}  
         ref={ container => this.container = container } 
         onMouseDown={this.handleMouseDown}  
         onTouchMove={ this.handleChange }  
         onTouchStart={ this.handleChange }>
-        <div className={classes.warmColor}>  
-          <div className={classname(classes.bgColor, direction === 'horizontal'? classes.horizontal : classes.vertical)}>
-            <div style={pointerStyle}>
-            {pointer ? (<pointer {...this.props}/>) : <Pointer/>}
+        <div className={classes.warmColor} style={bgColorStyle}>  
+          <div className={this.classNames(classes.bgColor, direction === 'horizontal'? classes.horizontal : classes.vertical)}>
+            <div style={pointerOffset}>
+            {pointer ? (<pointer {...this.props}/>) : <Pointer {...this.props}/>}
             </div>
           </div> 
         </div>       
@@ -104,11 +108,10 @@ class WarmLightPicker extends React.Component {
   }
 }
 
-WarmLightPicker.propTypes={
+WarmLight.propTypes={
   width: PropTypes.number,
   height: PropTypes.number,
   direction : PropTypes.oneOf(['horizontal','vertical']),
   pointer: PropTypes.node
 }
-
-export default withStyles(styles)(CustomPicker(WarmLightPicker));
+export default withStyles(styles)(ColorWarp(WarmLight,{h:30,s:1,l:0.95,a:1}));

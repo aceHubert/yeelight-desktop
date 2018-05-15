@@ -8,7 +8,7 @@ const ControlClient = require('./ControlClient')
 
 const isDev = require('electron-is-dev');
 const configDir = path.join(__dirname,'..','config');
-const configFilePath = path.resolve(configDir, 'devices.config'); 
+const configFilePath = path.resolve(configDir, 'config.conf'); 
 const kIP = "239.255.255.250";
 const kPort = 1982;
 
@@ -16,7 +16,7 @@ const kPort = 1982;
 // 保持window对象的全局引用,避免JavaScript对象被垃圾回收时,窗口被自动关闭.
 let mainWindow
 let controlClient
-let devices = []
+let config = {}
 
 // 创建主窗体
 function createWindow() {
@@ -38,7 +38,7 @@ function createWindow() {
       role: 'quit'
     }]
   }, {
-    label: 'Operate',
+    label: 'Device',
     submenu:[{
       label: 'Scan',
       click:()=>{
@@ -82,28 +82,38 @@ ipcMain.on('request', (event, arg) => {
     case 'scan':
       controlClient.scan();
       break;
-    case 'get-devices':   
+    case 'get_config':   
       fs.readFile(configFilePath,'utf-8',(err,data)=>{
         if(!err){
-          devices = JSON.parse(data.toString());
+          config = JSON.parse(data.toString());
         }else if(err.code==='ENOENT'){         
-          fs.writeFile(configFilePath,'[]');
+          fs.writeFile(configFilePath,Json.stringify({
+            theme:'light',
+            devices:[]
+          },2));
         }
         sendToRenderer('report', {
-          type: 'add-devices',
-          devices: devices
+          type: 'get_config',
+          config
         })
       });     
       break;
+    case 'set_theme':
+      if(config.theme != arg.theme)
+      {
+        config.theme = arg.theme;
+        saveConfig();
+      }
+      break;
     case 'connect':
-      const device = devices.find(device=>device.did=== arg.did);
+      const device = config.devices.find(device=>device.did=== arg.did);
       if(device)
         controlClient.connectDevice(device.did,device.address);
       break;
     case 'remove':
-      const deviceIndex = devices.findIndex(device=>device.did===arg.did);
-      devices.splice(deviceIndex,1);
-      fs.writeFile(configFilePath,JSON.stringify(devices,2),(err)=>{console.error(err)});
+      const deviceIndex = config.devices.findIndex(device=>device.did===arg.did);
+      config.devices.splice(deviceIndex,1);
+      saveConfig();
       break;
     case 'command':
       controlClient.sendCommand(arg.did, arg.guid, arg.method, arg.params);
@@ -111,6 +121,11 @@ ipcMain.on('request', (event, arg) => {
   }
 
 })
+
+// 保存配置文件
+function  saveConfig() {
+  fs.writeFile(configFilePath,JSON.stringify(config,null,2),(err)=>{console.error(err)});
+}
 
 // 初始化客户端
 function initClient() {
@@ -122,11 +137,11 @@ function initClient() {
 
   cc.onAddDevice = function (did, location, data) {
     console.log(did, location)
-    devices.push({
+    config.devices.push({
       did,
       address:location
     })
-    fs.writeFile(configFilePath,JSON.stringify(devices,2),(err)=>{console.error(err)});
+    saveConfig()
     sendToRenderer('report', {
       type: 'add-devices',
       devices: [{
@@ -166,7 +181,7 @@ app.on('ready', () => {
   //系统恢复
   electron.powerMonitor.on('resume',()=>{
     //恢复后重新连接
-    _.map(devices,device=>{
+    _.map(config.devices,device=>{
       controlClient.connectDevice(device.did,device.address);
     })
   })

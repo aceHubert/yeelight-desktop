@@ -1,13 +1,12 @@
 import React, {Component} from 'react'
 import PropTypes from 'prop-types'
 import classname from 'classname'
-import {withStyles} from 'material-ui/styles';
-import grey from 'material-ui/colors/grey';
-import red from 'material-ui/colors/red';
-import Card, {CardHeader, CardMedia} from 'material-ui/Card';
-import IconButton from 'material-ui/IconButton';
-import Tooltip from 'material-ui/Tooltip';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import Card, {CardHeader, CardMedia} from 'material-ui/Card'
+import IconButton from 'material-ui/IconButton'
+import Tooltip from 'material-ui/Tooltip'
+import MoreVertIcon from '@material-ui/icons/MoreVert'
+import {withStyles} from 'material-ui/styles'
+import yellow from 'material-ui/colors/yellow'
 
 const styles = theme =>({
   card: {
@@ -38,10 +37,10 @@ const styles = theme =>({
   },
   deviceIcon:{
     padding: theme.spacing.unit,
-    background:grey[200],
+    background:theme.palette.primary.main
   },
   powerIcon:{
-    fill: grey[500],
+    fill: theme.palette.grey[500],
     width: '1em',
     height: '1em',
     display: 'inline-block',
@@ -51,7 +50,7 @@ const styles = theme =>({
     flexShrink: 0
   },
   powerOn:{
-    fill: red[500]
+    fill: yellow[600]
   }
 })
 
