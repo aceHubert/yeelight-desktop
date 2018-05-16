@@ -1,9 +1,9 @@
 import React from 'react';
 import { Component } from '../../libs'
 import PropTypes from 'prop-types'
-import {withStyles} from 'material-ui/styles';
-import grey from 'material-ui/colors/grey';
-import ColorWarp from './ColorWarp';
+import {withStyles} from 'material-ui/styles'
+import Pointer from "./Pointer"
+import ColorWarp from './ColorWarp'
 import { calculateChange } from "../../helpers/colorPicker/hsv"
 
 const array = Array.from(new Array(360),(val,index)=>index)
@@ -11,7 +11,7 @@ const styles = theme=>({
   warp:{
     position: 'absolute',
     top: 0, right: 0, bottom: 0, left: 0,
-    borderRadius: '2px'
+    borderRadius: '50%'
   },
   span:{
     cursor: 'pointer',
@@ -26,22 +26,56 @@ class Wheel extends Component{
     width: 220
   }
 
+  constructor(props){
+    super(props)
+
+    this.state={
+      hover:false,
+      pressed:false
+    }
+  }
+
   componentWillUnmount() {
     this.unbindEventListeners()
   }
 
-  handleChange = (e, skip)=>{
+  handleChange = (e, skip)=>{ 
     const change = calculateChange(e,skip,this.props,this.container);
     change && this.props.onChange && this.props.onChange(change,e);
   }
 
+  handleTouchStart = (e, skip)=>{
+    this.setState({
+      pressed: true
+    })
+    this.handleChange(e,skip);
+  }
+
+  handleMouseOver=(e)=>{
+    this.setState({
+      hover: true
+    })
+  }
+
+  handleMouseOut=(e)=>{
+    this.setState({
+      hover: false
+    })
+  }
+
   handleMouseDown = (e)=>{
+    this.setState({
+      pressed: true
+    })
     this.handleChange(e, true)
     window.addEventListener('mousemove', this.handleChange)
     window.addEventListener('mouseup', this.handleMouseUp)
   }
 
   handleMouseUp = () => {
+    this.setState({
+      pressed: false
+    })
     this.unbindEventListeners()
   }
 
@@ -67,15 +101,6 @@ class Wheel extends Component{
       height: 3,
     }
 
-    const pointerStyle = {
-      width: '8px',
-      height: '8px',
-      borderRadius: '50%',
-      transform: 'translate(-9px, -9px)',
-      backgroundColor: 'transparent',
-      border: `5px solid ${ grey[800] }`,
-      boxShadow: 'rgba(0, 0, 0, 0.5) 0px 1px 4px 0px'
-    }
     let angle = hsv.h % 90; //角度
     if(hsv.h > 90 && hsv.h < 180 || hsv.h > 270 && hsv.h < 360)
       angle = 90 - angle;
@@ -108,9 +133,12 @@ class Wheel extends Component{
    return (<div className={this.className('wheel-picker')} style={this.style(rootStyle)}>
     <div className={classes.warp}  
       ref={ container => this.container = container } 
+      onMouseOver={this.handleMouseOver}
+      onMouseOut={this.handleMouseOut}
       onMouseDown={this.handleMouseDown}  
       onTouchMove={ this.handleChange }  
-      onTouchStart={ this.handleChange }>
+      onTouchStart={ this.handleTouchStart }
+      onTouchEnd={this.handleMouseOut}>
         {
           array.map(num=>{
             const style = {
@@ -121,8 +149,7 @@ class Wheel extends Component{
           })
         }
         <div style={pointerOffset}>
-          <div style={pointerStyle}>
-          </div>
+          <Pointer {...this.props} {...this.state}/>
         </div>
       </div>
     </div>)

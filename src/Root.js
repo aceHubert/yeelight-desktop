@@ -15,8 +15,8 @@ import IconButton from 'material-ui/IconButton';
 import Tooltip from 'material-ui/Tooltip'
 import CloseIcon from '@material-ui/icons/Close';
 import {withStyles} from 'material-ui/styles';
-import yellow from 'material-ui/colors/yellow';
-import { DeviceBox, ColorPicker } from './components'
+import red from 'material-ui/colors/red';
+import { DeviceBox, ColorPicker, Slider } from './components'
 import color from './helpers/colorPicker/color'
 
 const os = window.require('os');
@@ -101,16 +101,28 @@ const styles = theme =>({
     padding: '20px 100px',
     boxSizing: 'border-box'
   },
-  operateListTile:{
+  operateListTile:Object.assign({
     position: 'relative',
     padding: '30px 10px 10px',
     width: '100%',
     height: '100%',
     textAlign: 'center',
-    // background: blueGrey[100],
-    border:`1px dotted ${theme.palette.grey[900]}`,
     boxSizing: 'border-box'
-  },
+  }, theme.palette.type==='light'?{
+    '&:after':{
+      content:'""',
+      background: theme.palette.grey[900],
+      opacity:'.5',
+      position:'absolute',
+      left:0,
+      right:0,
+      top:0,
+      bottom:0,
+      zIndex:-1
+    }
+  }:{
+    border:`1px dotted ${theme.palette.grey[700]}`
+  } ),
   tileTitle:{
     padding: '1px 3px',
     position: 'absolute',
@@ -125,7 +137,7 @@ const styles = theme =>({
     margin:'auto'
   },
   powerIcon:{
-    fill: theme.palette.grey[500],
+    fill: theme.palette.grey[600],
     width: '1em',
     height: '1em',
     display: 'inline-block',
@@ -135,7 +147,7 @@ const styles = theme =>({
     flexShrink: 0
   },
   powerOn:{
-    fill: yellow[700]
+    fill: red[600]
   },
   recommandColor:{
     margin:'15px auto 10px',
@@ -197,6 +209,10 @@ class App extends Component {
   
   handleColorChanged= (did,color)=>{
      this.setHSV(did,color.hsv.h,color.hsv.s*100);
+  }
+
+  handleBrightChange= (did,bright)=>{
+    console.log(bright)
   }
 
   handleTemperature= (did,color)=>{
@@ -442,9 +458,9 @@ class App extends Component {
               ))
             }
           </Grid> : <div className={classes.noDevice}>
-            <Typography variant="headline" className={classes.networkNotify}>Make sure the bulbs are in same network with your computer.</Typography>
+            <Typography variant="headline" className={classes.networkNotify}>Make sure that the bulbs are in same network with your computer.</Typography>
             <Button variant="raised" color="primary" onClick={this.handleScanDevices} >
-              Search Devices
+              Scan Devices
             </Button>
           </div>
         }  
@@ -475,7 +491,7 @@ class App extends Component {
                 <GridListTile cols={1}>
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>power</span>
-                    <Tooltip title={anchorDevice&&anchorDevice.data['power'] === 'on'?'Power Off':'Power On'}>
+                    <Tooltip title={anchorDevice&&anchorDevice.data['power'] === 'on'?'Power Off':'Power On'} placement="top">
                       <IconButton aria-label="Power" onClick={()=>this.handlePowerSwitch(anchorDevice.did,anchorDevice.data['power']!=='on' )}>
                         <svg className={classname(classes.powerIcon,anchorDevice&&anchorDevice.data['power'] === 'on'&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
                           <g>
@@ -497,7 +513,7 @@ class App extends Component {
                 <GridListTile rows={4} cols={1}>
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>white</span>                    
-                    <ColorPicker.Warm direction="vertical" className={classes.colorPanel} onChangeComplete={color=>this.handleTemperature(anchorDevice.did,color)}></ColorPicker.Warm>   
+                    <ColorPicker.White direction="vertical" width={10} height={296} className={classes.colorPanel} onChangeComplete={color=>this.handleTemperature(anchorDevice.did,color)}></ColorPicker.White>   
                   </div>
                 </GridListTile>
                 <GridListTile rows={4} cols={2}>
@@ -508,7 +524,9 @@ class App extends Component {
                     <div className={classes.recommandColor}>
                     {
                       commonColors.map((c,index)=>(
-                        <span key={index} className={classes.colorbox} style={{background:`${c.hex}`}} title={c.title} onClick={e=>this.handleColorChanged(anchorDevice.did,color.toState(c.hex,0))}/>
+                        <Tooltip title={c.title} placement="top">
+                          <span key={index} className={classes.colorbox} style={{background:`${c.hex}`}}  onClick={e=>this.handleColorChanged(anchorDevice.did,color.toState(c.hex,0))}/>
+                        </Tooltip>
                       ))
                     }
                     </div>
@@ -522,6 +540,7 @@ class App extends Component {
                 <GridListTile rows={3} cols={5}>
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>flow</span> 
+                    <Slider defaultValue={[30,100]} max={120} disabled onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
                   </div>
                 </GridListTile>
               </GridList>

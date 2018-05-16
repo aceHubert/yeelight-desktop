@@ -60,4 +60,3 @@ typings/
 dist/
 build/*
 !build/icons
-config.conf

@@ -1,9 +1,9 @@
-import Warm from "./Warm";
+import White from "./White";
 import HSV from "./HSV";
 
 const ColorPicker ={
-  Warm:Warm,
-  HSV:HSV
+  White,
+  HSV
 }
 
 export default ColorPicker;

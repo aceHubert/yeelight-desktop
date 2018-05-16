@@ -2,15 +2,14 @@ import React from 'react'
 import { Component } from '../../libs'
 import PropTypes from 'prop-types'
 import {withStyles} from 'material-ui/styles'
-import Pointer from "./WarmPointer"
+import Pointer from "./Pointer"
 import ColorWarp from './ColorWarp'
-import { calculateChange } from "../../helpers/colorPicker/warm"
+import { calculateChange } from "../../helpers/colorPicker/white"
 
 const styles = theme=>({  
   warp:{
     position: 'absolute',
-    top: 0, right: 0, bottom: 0, left: 0,
-    borderRadius: '2px'
+    top: 0, right: 0, bottom: 0, left: 0
   },
   bgColor:{
     padding: '0px 2px',
@@ -19,7 +18,8 @@ const styles = theme=>({
     borderRadius: '2px'
   },
   warmColor: {
-    height: '100%'
+    height: '100%',
+    borderRadius: '2px'
   },
   horizontal: {
     // background: '-webkit-linear-gradient(to right, #fff, rgba(255,255,255,0))',
@@ -29,15 +29,23 @@ const styles = theme=>({
     // background: '-webkit-linear-gradient(to top, #fff, rgba(255,255,255,0))',
     background: 'linear-gradient(to bottom, #fff, rgba(255,255,255,0))'
   }
-
 })
 
 class WarmLight extends Component {
 
   static defaultProps={
     width: 316,
-    height: 16,
+    height: 10,
     direction: 'horizontal'
+  }
+  
+  constructor(props){
+    super(props)
+
+    this.state={
+      hover:false,
+      pressed:false
+    }
   }
 
   componentWillUnmount() {
@@ -49,13 +57,38 @@ class WarmLight extends Component {
     change && this.props.onChange && this.props.onChange(change,e);
   }
 
+  handleTouchStart = (e, skip)=>{
+    this.setState({
+      pressed: true
+    })
+    this.handleChange(e,skip);
+  }
+
+  handleMouseOver=(e)=>{
+    this.setState({
+      hover: true
+    })
+  }
+
+  handleMouseOut=(e)=>{
+    this.setState({
+      hover: false
+    })
+  }
+
   handleMouseDown = (e)=>{
+    this.setState({
+      pressed: true
+    })
     this.handleChange(e, true)
     window.addEventListener('mousemove', this.handleChange)
     window.addEventListener('mouseup', this.handleMouseUp)
   }
 
   handleMouseUp = () => {
+    this.setState({
+      pressed: false
+    })
     this.unbindEventListeners()
   }
 
@@ -93,13 +126,16 @@ class WarmLight extends Component {
     return <div className={this.className('warmlight-picker')}  style={this.style(rootStyle)}>
       <div className={classes.warp}  
         ref={ container => this.container = container } 
+        onMouseOver={this.handleMouseOver}
+        onMouseOut={this.handleMouseOut}
         onMouseDown={this.handleMouseDown}  
         onTouchMove={ this.handleChange }  
-        onTouchStart={ this.handleChange }>
+        onTouchStart={ this.handleTouchStart }
+        onTouchEnd={this.handleMouseOut}>
         <div className={classes.warmColor} style={bgColorStyle}>  
           <div className={this.classNames(classes.bgColor, direction === 'horizontal'? classes.horizontal : classes.vertical)}>
-            <div style={pointerOffset}>
-            {pointer ? (<pointer {...this.props}/>) : <Pointer {...this.props}/>}
+            <div style={pointerOffset} className={classes.pointer}>
+            {pointer ? (<pointer {...this.props} {...this.state}/>) : <Pointer {...this.props} {...this.state}/>}
             </div>
           </div> 
         </div>       

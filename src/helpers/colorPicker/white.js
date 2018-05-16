@@ -14,8 +14,7 @@ export const calculateChange = (e, skip, props, container) => {
     } else if (top > containerHeight) {
       s = 100
     } else {
-      const percent = (top * 100) / containerHeight
-      s = percent
+      s = (top * 100) / containerHeight
     }
     if (props.hsv.s !== s) {
       return {
@@ -33,8 +32,7 @@ export const calculateChange = (e, skip, props, container) => {
     } else if (left > containerWidth) {
       s = 100
     } else {
-      const percent = (left * 100) / containerWidth
-      s =percent
+      s = (left * 100) / containerWidth
     }
 
     if (props.hsv.s !== s) {

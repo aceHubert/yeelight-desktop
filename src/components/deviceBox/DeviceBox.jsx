@@ -6,7 +6,7 @@ import IconButton from 'material-ui/IconButton'
 import Tooltip from 'material-ui/Tooltip'
 import MoreVertIcon from '@material-ui/icons/MoreVert'
 import {withStyles} from 'material-ui/styles'
-import yellow from 'material-ui/colors/yellow'
+import red from 'material-ui/colors/red'
 
 const styles = theme =>({
   card: {
@@ -40,7 +40,7 @@ const styles = theme =>({
     background:theme.palette.primary.main
   },
   powerIcon:{
-    fill: theme.palette.grey[500],
+    fill: theme.palette.grey[600],
     width: '1em',
     height: '1em',
     display: 'inline-block',
@@ -50,7 +50,7 @@ const styles = theme =>({
     flexShrink: 0
   },
   powerOn:{
-    fill: yellow[600]
+    fill: red[600]
   }
 })
 
@@ -64,7 +64,6 @@ class DeviceBox extends Component {
   }
 
   handleSwitch=()=>{
-    console.log(this.props.power)
      this.props.onSwitch(!this.props.power);
   }
 
@@ -96,7 +95,7 @@ class DeviceBox extends Component {
             />
             <div className={classes.controls}>
             {
-              connected ? <Tooltip title={power?'Power Off':'Power On'}>
+              connected ? <Tooltip title={power?'Power Off':'Power On'} placement="right">
                 <IconButton aria-label="Power" onClick={this.handleSwitch}>
                   <svg className={classname(classes.powerIcon,power&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
                     <g>
