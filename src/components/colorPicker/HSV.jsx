@@ -44,12 +44,7 @@ class Wheel extends Component{
     change && this.props.onChange && this.props.onChange(change,e);
   }
 
-  handleTouchStart = (e, skip)=>{
-    this.setState({
-      pressed: true
-    })
-    this.handleChange(e,skip);
-  }
+
 
   handleMouseOver=(e)=>{
     this.setState({
@@ -61,6 +56,14 @@ class Wheel extends Component{
     this.setState({
       hover: false
     })
+  }
+
+  handleTouchStart = (e, skip)=>{
+    this.setState({
+      pressed: true
+    })
+    this.handleChange(e,skip);
+    window.addEventListener('touchend', this.handleMouseUp)
   }
 
   handleMouseDown = (e)=>{
@@ -82,6 +85,7 @@ class Wheel extends Component{
   unbindEventListeners() {
     window.removeEventListener('mousemove', this.handleChange)
     window.removeEventListener('mouseup', this.handleMouseUp)
+    window.removeEventListener('touchend', this.handleMouseUp)
   }
 
   render(){

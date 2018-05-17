@@ -22,15 +22,6 @@ import color from './helpers/colorPicker/color'
 const os = window.require('os');
 const {ipcRenderer} = window.require('electron');
 
-// romance: 0,1,4000,1,5838189,1,4000,1,6689834,1
-// candle flicker: ,0,800,2,2700,50,800,2,2700,30,1600,2,2700,80,800,2,2700,60,1200,2,2700,90,2400,2,2700,50,1200,2,2700,80,800,2,2700,60,400,2,2700,70
-// birthday: 0,1,1996,1,14438425,80,1996,1,14448670,80,1996,1,11153940,80
-// movie : color_mode: 1  bright: 50  rgb: 1315890
-// dating night: color_mode: 1  rgb: 16737792 bright: 50
-// night mode：color_mode: 1  rgb: 16750848 bright: 1
-// home: color_mode: 2 bright: 80
-
-
 const styles = theme =>({
   app:{
     position: 'relative',
@@ -107,19 +98,10 @@ const styles = theme =>({
     width: '100%',
     height: '100%',
     textAlign: 'center',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    overflow:'auto'
   }, theme.palette.type==='light'?{
-    '&:after':{
-      content:'""',
-      background: theme.palette.grey[900],
-      opacity:'.5',
-      position:'absolute',
-      left:0,
-      right:0,
-      top:0,
-      bottom:0,
-      zIndex:-1
-    }
+    background: theme.palette.grey[400]
   }:{
     border:`1px dotted ${theme.palette.grey[700]}`
   } ),
@@ -159,6 +141,9 @@ const styles = theme =>({
     width:24,
     height:24,
     borderRadius:'50%'
+  },
+  sceneImg:{
+    width:'80px'
   }
 })
 
@@ -179,6 +164,19 @@ const commonColors =[{hex:'#F44336',title:'red'}
   ,{hex:'#FF9800',title:'orange'}
   ,{hex:'#FF5722',title:'deepOrange'}
 ]
+
+const recommand = {
+  sunrise: {label:'sunset',image: '5.png'},
+  sunset: {label:'sunset', image: '6.png'},
+  nightmode: {label:'Night mode', image: '7.png', type:'color', params:[16750848,1]},
+  datingnight: {label:'Dating night', image: '13.png', type:'color', params:[16737792,50]},
+  movie: {label:'Movie', image: '28.png', type:'color', params:[1315890,50]},
+  birthdayparty: {label:'Birthday party', image: '22.png', type:'cf', params:[0, 1, '1996,1,14438425,80,1996,1,14448670,80,1996,1,11153940,80']},
+  romance: {label:'Romance', image: '11.png', type:'cf', params:[0, 1, '4000,1,5838189,1,4000,1,6689834,1']},
+  home: {label:'Home', image: '27.png', command:{bright:80}},
+  flashnotify: {label:'Flash notify', image: '9.png'},
+  candleflicker: {label:'Candle flicker', image: '8.png', type:'cf', params:[0, 0, '800,2,2700,50,800,2,2700,30,1600,2,2700,80,800,2,2700,60,1200,2,2700,90,2400,2,2700,50,1200,2,2700,80,800,2,2700,60,400,2,2700,70']}
+}
 
 class App extends Component {
   commands={};
@@ -212,11 +210,16 @@ class App extends Component {
   }
 
   handleBrightChange= (did,bright)=>{
-    console.log(bright)
+    this.setBright(did,bright);
   }
 
   handleTemperature= (did,color)=>{
     this.setCtAbx(did, 6500 - color.hsv.s *(6500-1700));
+  }
+
+  handleScene = (did,name)=>{
+    const scene = recommand[name];
+    this.setScene(did, scene.type, ...scene.params);
   }
   
   handleActionMore = (did, target) => {
@@ -272,6 +275,11 @@ class App extends Component {
     this.sendCommand(did, 'get_prop', props);
   }
 
+  setName = (did,name) => {
+    //{"id":1,"method":"set_name","params":["my_bulb"]}
+    this.sendCommand(did,'set_name',[name]);
+  }
+
   setDefault = (did) => {
     //{"id":1,"method":"set_default","params":[]}
     this.sendCommand(did, 'set_default', []);
@@ -287,9 +295,9 @@ class App extends Component {
     this.sendCommand(did, 'toggle', []);
   }
 
-  setBright = (did, brightness) => {
+  setBright = (did, bright) => {
     //{"id":1,"method":"set_bright","params":[50, "smooth", 500]}
-    this.sendCommand(did, 'set_bright',[brightness, 'smooth', 500]);
+    this.sendCommand(did, 'set_bright',[bright, 'smooth', 500]);
   }
 
   setCtAbx = (did, ct)=>{
@@ -308,6 +316,27 @@ class App extends Component {
   setHSV = (did, hue, saturation) => {
     //{"id":1,"method":"set_hsv","params":[255, 45, "smooth", 500]}
     this.sendCommand(did, 'set_hsv',[hue, saturation, 'smooth', 500]);
+  }
+
+  startCf = (did, count, action, expression) => {
+    //{"id":1,"method":"start_cf","params":[ 4, 2, "1000, 2, 2700, 100, 500, 1,255, 10, 5000, 7, 0,0, 500, 2, 5000, 1"]
+    //expression:[duration, mode, value, brightness]:
+    this.sendCommand(did, 'start_cf', [count, action, expression]);
+  }
+
+  stopCf = (did) => {
+    //{"id":1,"method":"stop_cf","params":[]}
+    this.sendCommand(did, 'stop_cf', []);
+  }
+
+  setScene = (did, ...props) =>{
+    // {"id":1,"method":"set_scene", "params": ["color", 65280, 70]}
+    // {"id":1,"method":"set_scene", "params": ["hsv", 300, 70, 100]}
+    // {"id":1, "method":"set_scene", "params":["ct", 5400, 100]}
+    // {"id":1,
+    // "method":"set_scene","params":["cf",0,0,"500,1,255,100,1000,1,16776960,70"]}
+    // {"id":1, "method":"set_scene", "params":["auto_delay_off", 50, 5]
+    this.sendCommand(did, 'set_scene', props);
   }
 
   //从本地加载设备
@@ -477,7 +506,8 @@ class App extends Component {
             }
             <MenuItem onClick={this.handleDeviceRemove}>Remove</MenuItem>
           </Menu> 
-          <Dialog fullScreen open={modalOperateOpen} onClose={this.handleModalClose}>
+          {
+            !anchorDevice?null:<Dialog fullScreen open={modalOperateOpen} onClose={this.handleModalClose}>
             <AppBar className={classes.appBar}>
               <Toolbar>
                 <Typography variant="title" color="inherit" className={classes.flex}>{anchorDevice?((anchorDevice.data &&anchorDevice.data['name'])||anchorDevice.address||anchorDevice.did) :'Device Name'}</Typography>
@@ -487,13 +517,13 @@ class App extends Component {
               </Toolbar>
             </AppBar> 
             <div className={classes.operatePanel}>           
-              <GridList cellHeight={88} cols={5} spacing={12}>
+              <GridList cellHeight={96} cols={5} spacing={12}>
                 <GridListTile cols={1}>
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>power</span>
-                    <Tooltip title={anchorDevice&&anchorDevice.data['power'] === 'on'?'Power Off':'Power On'} placement="top">
+                    <Tooltip title={anchorDevice.data['power'] === 'on'?'Power Off':'Power On'} placement="top">
                       <IconButton aria-label="Power" onClick={()=>this.handlePowerSwitch(anchorDevice.did,anchorDevice.data['power']!=='on' )}>
-                        <svg className={classname(classes.powerIcon,anchorDevice&&anchorDevice.data['power'] === 'on'&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
+                        <svg className={classname(classes.powerIcon,anchorDevice.data['power'] === 'on'&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
                           <g>
                             <path d="M10.5,1.674V4c1.215,0.912,2,2.364,2,4c0,2.762-2.238,5-5,5s-5-2.238-5-5c0-1.636,0.785-3.088,2-4
                               V1.674C2.135,2.797,0.5,5.208,0.5,8c0,3.866,3.134,7,7,7s7-3.134,7-7C14.5,5.208,12.865,2.797,10.5,1.674z"/>
@@ -507,7 +537,8 @@ class App extends Component {
                 </GridListTile>
                 <GridListTile cols={4}>
                   <div className={classes.operateListTile}>
-                    <span className={classes.tileTitle}>brightness</span>              
+                    <span className={classes.tileTitle}>brightness</span> 
+                    <Slider defaultValue={anchorDevice.data['bright']||50} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>             
                   </div>
                 </GridListTile>                
                 <GridListTile rows={4} cols={1}>
@@ -534,18 +565,57 @@ class App extends Component {
                 </GridListTile>
                 <GridListTile rows={4} cols={2}>
                   <div className={classes.operateListTile}>
-                    <span className={classes.tileTitle}>recommend</span>                      
+                    <span className={classes.tileTitle}>recommend</span>  
+                    <Grid container spacing={24}>
+                    {              
+                      _.map(recommand,(item,key) => (
+                        <Grid item xs={12} sm={6} key={key} onClick={(e)=>this.handleScene(anchorDevice.did,key)}>
+                          <img src={require(`./images/icon_yeelight_scene_type_${item.image}`)} className={classes.sceneImg} alt={item.label}/>
+                          <Typography variant="subheadline" color="primary">{item.label}</Typography>
+                        </Grid>
+                      ))
+                    }
+                  </Grid>                    
                   </div>
                 </GridListTile>
-                <GridListTile rows={3} cols={5}>
+                <GridListTile rows={15} cols={5}>
                   <div className={classes.operateListTile}>
                     <span className={classes.tileTitle}>flow</span> 
-                    <Slider defaultValue={[30,100]} max={120} disabled onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={50} disabled onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>                    
+                    <Slider defaultValue={30} min={-50} max={50} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={30} min={-100} max={-50} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={30} min={100} max={1000} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={30} scaleLength={20} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={30} min={-100} scaleLength={30} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={50} color="green" onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={[30,80]} range  onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={[30,50]} range disabled  onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={[-30,30]} min={-50} max={50} range  scaleLength={20} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider defaultValue={[80,100]} min={50} max={200} range  scaleLength={30} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <br/>
+                    <br/>
+                    <div style={{height:200}}>
+                    <Slider direction="vertical" onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={50} disabled onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>                    
+                    <Slider direction="vertical" defaultValue={30} min={-50} max={50} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={30} min={-100} max={-50} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={30} min={100} max={1000} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={30} scaleLength={20} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={30} min={-100} scaleLength={30} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={50} color="green" onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={[30,80]} range  onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={[30,50]} range disabled  onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={[-30,30]} min={-50} max={50} range  scaleLength={20} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={[80,100]} min={50} max={200} range  scaleLength={30} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    <Slider direction="vertical" defaultValue={[80,100]} min={50} max={200} range  scaleLength={40} onChangeComplete={value=>this.handleBrightChange(anchorDevice.did,value)}></Slider>
+                    </div>
                   </div>
                 </GridListTile>
               </GridList>
             </div>
           </Dialog>  
+          }
         </div>
       </div> 
     );

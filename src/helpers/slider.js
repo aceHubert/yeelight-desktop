@@ -12,6 +12,15 @@ export const calculateChange = (e, skip, props, container) => {
   const top = y - (container.getBoundingClientRect().top + window.pageYOffset)
 
   if (props.direction === 'vertical') {
+    let offset;
+    if (top < 0) {
+      offset =100
+    } else if (top > containerHeight) {
+      offset = 0
+    } else {
+      offset = Math.round(100 - (top * 100) / containerHeight)
+    }
+    return offset;
   }else{
     let offset;
     if (left < 0) {

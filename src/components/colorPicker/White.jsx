@@ -57,12 +57,7 @@ class WarmLight extends Component {
     change && this.props.onChange && this.props.onChange(change,e);
   }
 
-  handleTouchStart = (e, skip)=>{
-    this.setState({
-      pressed: true
-    })
-    this.handleChange(e,skip);
-  }
+  
 
   handleMouseOver=(e)=>{
     this.setState({
@@ -85,6 +80,14 @@ class WarmLight extends Component {
     window.addEventListener('mouseup', this.handleMouseUp)
   }
 
+  handleTouchStart = (e, skip)=>{
+    this.setState({
+      pressed: true
+    })
+    this.handleChange(e,skip);
+    window.addEventListener('touchend', this.handleMouseUp)
+  }
+
   handleMouseUp = () => {
     this.setState({
       pressed: false
@@ -95,6 +98,7 @@ class WarmLight extends Component {
   unbindEventListeners() {
     window.removeEventListener('mousemove', this.handleChange)
     window.removeEventListener('mouseup', this.handleMouseUp)
+    window.removeEventListener('touchend', this.handleMouseUp)
   }
 
   render() {
@@ -130,8 +134,7 @@ class WarmLight extends Component {
         onMouseOut={this.handleMouseOut}
         onMouseDown={this.handleMouseDown}  
         onTouchMove={ this.handleChange }  
-        onTouchStart={ this.handleTouchStart }
-        onTouchEnd={this.handleMouseOut}>
+        onTouchStart={ this.handleTouchStart }>
         <div className={classes.warmColor} style={bgColorStyle}>  
           <div className={this.classNames(classes.bgColor, direction === 'horizontal'? classes.horizontal : classes.vertical)}>
             <div style={pointerOffset} className={classes.pointer}>
