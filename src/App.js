@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
+import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles';
 import Root from './Root'
 
 class App extends Component { 

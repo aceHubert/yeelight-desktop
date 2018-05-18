@@ -1,7 +1,7 @@
 import React from 'react';
-import { Component } from '../../libs'
 import PropTypes from 'prop-types'
-import {withStyles} from 'material-ui/styles'
+import {withStyles} from '@material-ui/core/styles'
+import { Component } from '../../libs'
 import Pointer from "./Pointer"
 import ColorWarp from './ColorWarp'
 import { calculateChange } from "../../helpers/colorPicker/hsv"
@@ -106,7 +106,7 @@ class Wheel extends Component{
     }
 
     let angle = hsv.h % 90; //角度
-    if(hsv.h > 90 && hsv.h < 180 || hsv.h > 270 && hsv.h < 360)
+    if((hsv.h > 90 && hsv.h < 180) || (hsv.h > 270 && hsv.h < 360))
       angle = 90 - angle;
     const radian = 2*Math.PI/360*angle; //弧度
     const hypotenuse = radius * hsv.s; //斜边长度

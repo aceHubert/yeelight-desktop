@@ -1,21 +1,21 @@
 import React, {Component} from 'react';
 import classname from 'classname'
 import _ from 'lodash'
-import Grid from 'material-ui/Grid';
-import GridList, { GridListTile } from 'material-ui/GridList';
-import Menu, { MenuItem } from 'material-ui/Menu';
-import Button from 'material-ui/Button';
-import Switch from 'material-ui/Switch';
-import {FormControlLabel} from 'material-ui/Form';
-import Typography from "material-ui/Typography";
-import Dialog from 'material-ui/Dialog';
-import AppBar from 'material-ui/AppBar';
-import Toolbar from 'material-ui/Toolbar';
-import IconButton from 'material-ui/IconButton';
-import Tooltip from 'material-ui/Tooltip'
+import Grid from '@material-ui/core/Grid';
+import GridList, { GridListTile } from '@material-ui/core/GridList';
+import Menu, { MenuItem } from '@material-ui/core/Menu';
+import Button from '@material-ui/core/Button';
+import Switch from '@material-ui/core/Switch';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Typography from "@material-ui/core/Typography";
+import Dialog from '@material-ui/core/Dialog';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
+import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip'
 import CloseIcon from '@material-ui/icons/Close';
-import {withStyles} from 'material-ui/styles';
-import red from 'material-ui/colors/red';
+import {withStyles} from '@material-ui/core/styles';
+import red from '@material-ui/core/colors/red';
 import { DeviceBox, ColorPicker, Slider } from './components'
 import color from './helpers/colorPicker/color'
 
@@ -454,6 +454,7 @@ class App extends Component {
     const osType = os.type();
     const osStr = osType === 'Linux' ? 'Linux' : 
           osType === 'Darwin' ? 'Mac' : 'Windows'
+          
     return (
       <div className={classes.app}>
         <header className={classes.header}>
@@ -493,7 +494,7 @@ class App extends Component {
             </Button>
           </div>
         }  
-          <Menu
+          <Menu id="menu-id"
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={this.handleMenuClose}

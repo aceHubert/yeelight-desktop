@@ -1,10 +1,10 @@
 import React from 'react'
-import { Component } from '../../libs'
 import PropTypes from 'prop-types'
 import _ from 'lodash'
 import debounce from 'lodash/debounce'
-import { withStyles } from 'material-ui/styles'
-import { calculateChange } from "../../helpers/slider";
+import { noop, Component } from '../../libs'
+import { withStyles } from '@material-ui/core/styles'
+import { calculateChange } from "../../helpers/slider"
 
 
 const styles = theme =>({
@@ -97,8 +97,8 @@ class Slider extends Component{
     range:false,
     scale:0,
     direction:'horizontal',
-    onChange:()=>{},
-    onChangeComplete:()=>{}
+    onChange:noop,
+    onChangeComplete:noop
   }
 
   activePointer = 'left';
@@ -171,19 +171,19 @@ class Slider extends Component{
     const oldValue = this.state.value;
     const newValue = this.calcValue(Math.round(offset/100*((max-min)))+min);    
     if(range){
-      if((this.activePointer==='left' && oldValue[0] != newValue && newValue < oldValue[1]) || newValue <= oldValue[0] ){
+      if((this.activePointer==='left' && oldValue[0] !== newValue && newValue < oldValue[1]) || newValue <= oldValue[0] ){
         this.activePointer==='right'&&(this.activePointer='left');
         this.setState({
           value:[newValue,oldValue[1]]
         },()=>{this.triggerChange(e)})
-      }else if((this.activePointer==='right' && oldValue[1] != newValue && newValue > oldValue[0])|| newValue >= oldValue[1]) {
+      }else if((this.activePointer==='right' && oldValue[1] !== newValue && newValue > oldValue[0])|| newValue >= oldValue[1]) {
         this.activePointer==='left'&&(this.activePointer='right');
         this.setState({
           value:[oldValue[0],newValue]
         },()=>{this.triggerChange(e)})
       }
     }else{         
-      if(oldValue != newValue)
+      if(oldValue !== newValue)
       {
         this.setState({
           value:newValue
@@ -236,9 +236,9 @@ class Slider extends Component{
   }
 
   render(){
-    const {classes, theme, min, max, defaultValue, range, scaleLength, direction, color, disabled} = this.props;
+    const {classes, theme, min, max, range, scaleLength, direction, color, disabled} = this.props;
     const {value, hover, pressed}=this.state;
-    const trackColor = disabled ?  theme.palette.grey[700] : (color || theme.palette.primary.main);
+    const trackColor = disabled ?  theme.palette.grey[700] : (color || theme.palette.primary[theme.palette.type]);
     const vertical = direction==='vertical';
     let rootStyle=Object.assign({
       position: 'relative',

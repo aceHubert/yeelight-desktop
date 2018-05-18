@@ -32,5 +32,4 @@ export const calculateChange = (e, skip, props, container) => {
     }
     return offset;
   }
-  return null
 }

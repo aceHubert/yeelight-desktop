@@ -1,6 +1,6 @@
 import React from 'react'
 import { Component } from '../../libs'
-import { withStyles } from 'material-ui/styles'
+import { withStyles } from '@material-ui/core/styles'
 
 const styles = theme =>({
   pointer:{
