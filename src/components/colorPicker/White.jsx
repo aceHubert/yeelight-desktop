@@ -102,9 +102,10 @@ class WarmLight extends Component {
   }
 
   render() {
-    const {classes, direction, pointer} = this.props;
+    const {classes, pointer, ...otherPorps} = this.props;
     const {maxNum,minNum} = {maxNum:Math.max(this.props.width,this.props.height),minNum:Math.min(this.props.width,this.props.height)};
-    const {width,height} = direction === 'horizontal' ?{width:maxNum,height:minNum}:{width:minNum,height:maxNum};
+    const isHorizontal = this.props.direction === 'horizontal'
+    const {width,height} = isHorizontal ?{width:maxNum,height:minNum}:{width:minNum,height:maxNum};
     const rootStyle = {
       position: 'relative',
       width: width,
@@ -120,7 +121,7 @@ class WarmLight extends Component {
     }
 
     const offset =  this.props.hsv.s*100
-    if(direction === 'vertical')
+    if(!isHorizontal)
     {
       pointerOffset.top=`${ offset > 100 ? 100 : offset }%`;
     }else{
@@ -136,9 +137,9 @@ class WarmLight extends Component {
         onTouchMove={ this.handleChange }  
         onTouchStart={ this.handleTouchStart }>
         <div className={classes.warmColor} style={bgColorStyle}>  
-          <div className={this.classNames(classes.bgColor, direction === 'horizontal'? classes.horizontal : classes.vertical)}>
+          <div className={this.classNames(classes.bgColor, isHorizontal ? classes.horizontal : classes.vertical)}>
             <div style={pointerOffset} className={classes.pointer}>
-            {pointer ? (<pointer {...this.props} {...this.state}/>) : <Pointer {...this.props} {...this.state}/>}
+            {pointer ? (<pointer {...otherPorps} {...this.state}/>) : <Pointer {...otherPorps} {...this.state}/>}
             </div>
           </div> 
         </div>       

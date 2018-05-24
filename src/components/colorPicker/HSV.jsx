@@ -89,7 +89,7 @@ class Wheel extends Component{
   }
 
   render(){
-    const {classes, width, hsv} = this.props;
+    const {classes, width, hsv, ...otherProps} = this.props;
     const radius = width/2
 
     const rootStyle = {
@@ -153,7 +153,7 @@ class Wheel extends Component{
           })
         }
         <div style={pointerOffset}>
-          <Pointer {...this.props} {...this.state}/>
+          <Pointer {...otherProps} {...this.state}/>
         </div>
       </div>
     </div>)

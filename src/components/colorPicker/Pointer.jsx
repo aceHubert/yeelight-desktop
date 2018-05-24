@@ -51,7 +51,7 @@ const styles = theme =>({
 class Pointer extends Component{
 
   render(){
-    const {classes,thumbColor,hover,focus,pressed} = this.props;
+    const {classes, thumbColor, hover, focus, pressed} = this.props;
     let style = {};
     if(this.props.direction === 'vertical')
       style.transform =  'translate(-5px, -50%)';

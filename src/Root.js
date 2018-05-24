@@ -1,26 +1,29 @@
-import React, {Component} from 'react';
-import classname from 'classname'
+import React, {Component} from 'react'
+import classnames from 'classnames'
 import _ from 'lodash'
-import Grid from '@material-ui/core/Grid';
-import GridList, { GridListTile } from '@material-ui/core/GridList';
-import Menu, { MenuItem } from '@material-ui/core/Menu';
-import Button from '@material-ui/core/Button';
-import Switch from '@material-ui/core/Switch';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Typography from "@material-ui/core/Typography";
-import Dialog from '@material-ui/core/Dialog';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import IconButton from '@material-ui/core/IconButton';
+import Grid from '@material-ui/core/Grid'
+import GridList from '@material-ui/core/GridList'
+import GridListTile from '@material-ui/core/GridListTile'
+import Menu  from '@material-ui/core/Menu'
+import MenuItem  from '@material-ui/core/MenuItem'
+import Button from '@material-ui/core/Button'
+import Switch from '@material-ui/core/Switch'
+import FormControlLabel from '@material-ui/core/FormControlLabel'
+import Typography from '@material-ui/core/Typography'
+import Dialog from '@material-ui/core/Dialog'
+import AppBar from '@material-ui/core/AppBar'
+import Toolbar from '@material-ui/core/Toolbar'
+import IconButton from '@material-ui/core/IconButton'
 import Tooltip from '@material-ui/core/Tooltip'
-import CloseIcon from '@material-ui/icons/Close';
-import {withStyles} from '@material-ui/core/styles';
-import red from '@material-ui/core/colors/red';
-import { DeviceBox, ColorPicker, Slider } from './components'
+import CloseIcon from '@material-ui/icons/Close'
+import {withStyles} from '@material-ui/core/styles'
+import red from '@material-ui/core/colors/red'
+import { Slider } from 'material-ui-slider'
+import { DeviceBox, ColorPicker } from './components'
 import color from './helpers/colorPicker/color'
 
-const os = window.require('os');
-const {ipcRenderer} = window.require('electron');
+const os = window.require('os')
+const {ipcRenderer} = window.require('electron')
 
 const styles = theme =>({
   app:{
@@ -524,7 +527,7 @@ class App extends Component {
                     <span className={classes.tileTitle}>power</span>
                     <Tooltip title={anchorDevice.data['power'] === 'on'?'Power Off':'Power On'} placement="top">
                       <IconButton aria-label="Power" onClick={()=>this.handlePowerSwitch(anchorDevice.did,anchorDevice.data['power']!=='on' )}>
-                        <svg className={classname(classes.powerIcon,anchorDevice.data['power'] === 'on'&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
+                        <svg className={classnames(classes.powerIcon,anchorDevice.data['power'] === 'on'&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
                           <g>
                             <path d="M10.5,1.674V4c1.215,0.912,2,2.364,2,4c0,2.762-2.238,5-5,5s-5-2.238-5-5c0-1.636,0.785-3.088,2-4
                               V1.674C2.135,2.797,0.5,5.208,0.5,8c0,3.866,3.134,7,7,7s7-3.134,7-7C14.5,5.208,12.865,2.797,10.5,1.674z"/>
@@ -556,7 +559,7 @@ class App extends Component {
                     <div className={classes.recommandColor}>
                     {
                       commonColors.map((c,index)=>(
-                        <Tooltip title={c.title} placement="top">
+                        <Tooltip title={c.title} placement="top" key={index}>
                           <span key={index} className={classes.colorbox} style={{background:`${c.hex}`}}  onClick={e=>this.handleColorChanged(anchorDevice.did,color.toState(c.hex,0))}/>
                         </Tooltip>
                       ))
@@ -572,7 +575,7 @@ class App extends Component {
                       _.map(recommand,(item,key) => (
                         <Grid item xs={12} sm={6} key={key} onClick={(e)=>this.handleScene(anchorDevice.did,key)}>
                           <img src={require(`./images/icon_yeelight_scene_type_${item.image}`)} className={classes.sceneImg} alt={item.label}/>
-                          <Typography variant="subheadline" color="primary">{item.label}</Typography>
+                          <Typography variant="subheading" color="primary">{item.label}</Typography>
                         </Grid>
                       ))
                     }

@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import classname from 'classname'
 import { noop, Component } from '../../libs'
 import Card from '@material-ui/core/Card'
 import CardHeader from '@material-ui/core/CardHeader'
@@ -99,7 +98,7 @@ class DeviceBox extends Component {
           {
             connected ? <Tooltip title={power?'Power Off':'Power On'} placement="right">
               <IconButton aria-label="Power" onClick={this.handleSwitch}>
-                <svg className={classname(classes.powerIcon,power&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
+                <svg className={this.classNames(classes.powerIcon,power&&classes.powerOn)}  viewBox="0 0 15 15" focusable="false">
                   <g>
                     <path d="M10.5,1.674V4c1.215,0.912,2,2.364,2,4c0,2.762-2.238,5-5,5s-5-2.238-5-5c0-1.636,0.785-3.088,2-4
                       V1.674C2.135,2.797,0.5,5.208,0.5,8c0,3.866,3.134,7,7,7s7-3.134,7-7C14.5,5.208,12.865,2.797,10.5,1.674z"/>
